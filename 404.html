@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="description" content="免费网页大逃杀：缩圈、搜打装、狙击开镜、人机对战。点开即玩，无需下载。" />
   <meta name="theme-color" content="#0b0f14" />
-  <meta property="og:title" content="大逃杀 · 轻量版 Battle Royale Lite" />
+  <meta property="og:title" content="小游戏试手 · 大逃杀轻量版" />
   <meta property="og:description" content="浏览器里玩的吃鸡小游戏：缩圈、搜打装、狙击开镜。免费在线。" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary" />
-  <title>大逃杀轻量版 · Battle Royale Lite</title>
+  <title>小游戏试手 · 大逃杀轻量版</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect fill='%230b0f14' width='64' height='64' rx='12'/%3E%3Ccircle cx='32' cy='32' r='14' fill='none' stroke='%233ddc97' stroke-width='4'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%23c084fc'/%3E%3C/svg%3E" />
   <style>
 :root {
@@ -64,6 +64,8 @@ html, body {
     radial-gradient(ellipse at 70% 80%, rgba(76, 201, 240, 0.1), transparent 40%),
     linear-gradient(160deg, #0b0f14 0%, #121a24 50%, #0a1018 100%);
   z-index: 20;
+  overflow-y: auto;
+  padding: 16px;
 }
 
 .menu-card {
@@ -75,6 +77,8 @@ html, body {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(12px);
   text-align: center;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
 }
 
 .menu-card.small {
@@ -314,7 +318,19 @@ kbd {
   z-index: 15;
   text-shadow: 0 0 4px #000, 0 0 8px rgba(61, 220, 151, 0.6);
   transform: translate(0, 0);
-  will-change: left, top;
+  will-change: left, top, transform;
+  transition: color 0.06s ease, transform 0.06s ease;
+}
+
+#crosshair.hit {
+  color: var(--gold);
+  transform: scale(1.32) rotate(45deg);
+}
+
+#crosshair.kill {
+  color: var(--danger);
+  transform: scale(1.55) rotate(45deg);
+  text-shadow: 0 0 5px #000, 0 0 12px rgba(255, 92, 92, 0.9);
 }
 
 #bottom-hud {
@@ -418,6 +434,11 @@ kbd {
   font-size: 0.7rem;
   color: var(--muted);
   backdrop-filter: blur(8px);
+}
+
+.slot[data-slot] {
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .slot.active {
@@ -583,6 +604,125 @@ kbd {
   opacity: 1;
 }
 
+.touch-only,
+#mobile-controls {
+  display: none;
+}
+
+#mobile-controls {
+  position: absolute;
+  inset: 0;
+  z-index: 18;
+  pointer-events: none;
+}
+
+.touch-ui #mobile-controls {
+  display: block;
+}
+
+.touch-ui .desktop-only {
+  display: none !important;
+}
+
+.touch-ui .touch-only {
+  display: block;
+}
+
+.touch-ui #game,
+.touch-ui #hud.playing {
+  cursor: default;
+  touch-action: none;
+}
+
+.touch-ui .slot .key {
+  display: none;
+}
+
+.touch-ui #btn-mute {
+  top: 54px;
+  left: 8px;
+  padding: 6px 9px;
+  font-size: 0.72rem;
+}
+
+.touch-ui #kill-feed .kill-item:nth-child(n + 4) {
+  display: none;
+}
+
+.touch-stick {
+  position: absolute;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(8, 12, 18, 0.42);
+  box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.28);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+#move-stick {
+  left: max(16px, env(safe-area-inset-left));
+}
+
+#aim-stick {
+  right: max(16px, env(safe-area-inset-right));
+  border-color: rgba(255, 200, 87, 0.35);
+}
+
+.stick-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 48px;
+  height: 48px;
+  margin: -24px 0 0 -24px;
+  border-radius: 50%;
+  background: rgba(232, 240, 255, 0.26);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+  transform: translate(0, 0);
+}
+
+#aim-stick .stick-knob {
+  background: rgba(255, 200, 87, 0.3);
+}
+
+.touch-actions {
+  position: absolute;
+  right: max(136px, calc(env(safe-area-inset-right) + 136px));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: repeat(2, 46px);
+  gap: 9px;
+  pointer-events: auto;
+}
+
+.touch-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(8, 12, 18, 0.72);
+  color: var(--text);
+  font: 700 13px var(--font);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.26);
+  touch-action: manipulation;
+}
+
+.touch-btn:active,
+.touch-btn.active {
+  color: #04140c;
+  background: var(--accent);
+  border-color: transparent;
+}
+
+.touch-btn.unavailable {
+  opacity: 0.42;
+}
+
 @media (max-width: 640px) {
   .menu-card {
     padding: 22px 16px;
@@ -601,12 +741,87 @@ kbd {
     scale: 0.9;
   }
   .hp-block {
-    width: 150px;
+    width: 126px;
+    padding: 8px;
+  }
+  .weapon-block {
+    min-width: 108px;
+    padding: 8px 10px;
+  }
+  #bottom-hud {
+    left: 10px;
+    right: 10px;
+    bottom: 132px;
+    gap: 7px;
+  }
+  .slots {
+    position: absolute;
+    left: 0;
+    bottom: 70px;
+    margin-left: 0;
   }
   .slot {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 42px;
     font-size: 0.62rem;
+  }
+  #pickup-hint {
+    bottom: 244px;
+  }
+  #move-hint {
+    bottom: 288px;
+  }
+  #kill-feed {
+    top: 132px;
+    right: 10px;
+    width: min(220px, 58vw);
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  #game,
+  #hud.playing {
+    cursor: default;
+    touch-action: none;
+  }
+  #mobile-controls {
+    display: block;
+  }
+  .desktop-only {
+    display: none !important;
+  }
+  .touch-only {
+    display: block;
+  }
+  #btn-mute {
+    top: 54px;
+    left: 8px;
+    padding: 8px 11px;
+    font-size: 0.72rem;
+  }
+  #kill-feed .kill-item:nth-child(n + 4) {
+    display: none;
+  }
+  .slot .key {
+    display: none;
+  }
+}
+
+@media (max-height: 620px) and (hover: none) and (pointer: coarse) {
+  .touch-stick {
+    width: 92px;
+    height: 92px;
+  }
+  .stick-knob {
+    width: 42px;
+    height: 42px;
+    margin: -21px 0 0 -21px;
+  }
+  .touch-actions {
+    right: max(118px, calc(env(safe-area-inset-right) + 118px));
+  }
+  #bottom-hud {
+    bottom: 108px;
   }
 }
 
@@ -628,7 +843,7 @@ kbd {
     <div id="menu" class="screen">
       <div class="menu-card">
         <p class="badge">BATTLE ROYALE LITE · ONLINE</p>
-        <h1>大逃杀 · 轻量版</h1>
+        <h1>小游戏试手 · 大逃杀</h1>
         <p class="subtitle">缩圈 · 搜打装 · 狙击开镜 · 最后一人获胜</p>
         <div class="menu-stats">
           <div><span>地图</span><strong>2000×2000</strong></div>
@@ -647,7 +862,7 @@ kbd {
           <button id="btn-fullscreen" class="btn ghost" type="button">全屏</button>
         </div>
         <p class="best-score" id="best-score">历史最佳击杀 0 · 吃鸡 0 次</p>
-        <div class="controls-hint">
+        <div class="controls-hint desktop-only">
           <h3>操作说明</h3>
           <ul>
             <li><kbd>W A S D</kbd> 移动 · <kbd>Shift</kbd> 冲刺</li>
@@ -655,6 +870,14 @@ kbd {
             <li><kbd>右键</kbd> / <kbd>C</kbd> 狙击开镜（约 2.3×）</li>
             <li><kbd>R</kbd> 换弹 · <kbd>F</kbd> 拾枪 · 补给自动捡</li>
             <li><kbd>1-4</kbd> 切枪 · <kbd>Q/E</kbd> 医疗 · <kbd>M</kbd> 音效</li>
+          </ul>
+        </div>
+        <div class="controls-hint touch-only">
+          <h3>触屏操作</h3>
+          <ul>
+            <li>左摇杆移动，推到底自动冲刺</li>
+            <li>右摇杆瞄准并射击，点武器栏切枪</li>
+            <li>使用右侧按钮开镜、换弹、医疗和拾取</li>
           </ul>
         </div>
         <p class="menu-tips">纯前端单机 · 可发给好友用浏览器打开</p>
@@ -690,6 +913,20 @@ kbd {
       <div id="pickup-hint" class="hidden"></div>
       <div id="zone-warn" class="hidden">毒圈伤害中！跟随紫色箭头进圈</div>
       <div id="move-hint" class="hidden">WASD 移动 · 右键/C 开镜(狙击) · F 拾枪</div>
+      <div id="mobile-controls" aria-label="触屏操作">
+        <div id="move-stick" class="touch-stick" aria-label="移动摇杆">
+          <div class="stick-knob"></div>
+        </div>
+        <div id="aim-stick" class="touch-stick" aria-label="瞄准与射击摇杆">
+          <div class="stick-knob"></div>
+        </div>
+        <div class="touch-actions">
+          <button id="touch-scope" class="touch-btn" type="button" aria-label="切换开镜">镜</button>
+          <button id="touch-reload" class="touch-btn" type="button" aria-label="换弹">换</button>
+          <button id="touch-medkit" class="touch-btn" type="button" aria-label="使用医疗包">医</button>
+          <button id="touch-pickup" class="touch-btn" type="button" aria-label="拾取物资">拾</button>
+        </div>
+      </div>
     </div>
 
     <div id="pause" class="screen hidden">
@@ -1662,13 +1899,14 @@ function useMedkit(entity) {
   return true;
 }
 
-function moveEntity(entity, dx, dy, dt, buildings, sprint) {
+function moveEntity(entity, dx, dy, dt, buildings, sprint, speedFactor) {
   if (!entity.alive) return false;
   const len = Math.hypot(dx, dy);
   if (len > 0) {
     dx /= len;
     dy /= len;
-    const spd = entity.speed * (sprint ? entity.sprintMul : 1);
+    const analog = speedFactor == null ? 1 : clamp(speedFactor, 0, 1);
+    const spd = entity.speed * (sprint ? entity.sprintMul : 1) * analog;
     entity.x += dx * spd * dt;
     entity.y += dy * spd * dt;
     resolveCircleBuilding(entity, buildings);
@@ -2119,7 +2357,10 @@ class Game {
     this.shake = 0;
     this.ambientT = 0;
     this.hitFlash = 0;
+    this.hitMarker = 0;
+    this.killMarker = 0;
     this.zoneArrow = { active: false, ang: 0, dist: 0 };
+    this.mobileMove = { x: 0, y: 0, sprint: false };
     this.viewZoom = 1; // 当前镜头倍率（平滑插值）
     this.targetZoom = 1;
     this.wasScoping = false;
@@ -2152,6 +2393,8 @@ class Game {
     this.now = this.time * 1000;
     this.ambientT += dt;
     if (this.hitFlash > 0) this.hitFlash -= dt;
+    if (this.hitMarker > 0) this.hitMarker -= dt;
+    if (this.killMarker > 0) this.killMarker -= dt;
 
     const p = this.player;
     if (p.invuln > 0) p.invuln -= dt;
@@ -2179,17 +2422,30 @@ class Game {
 
       let dx = 0;
       let dy = 0;
+      let keyboardMove = false;
       if (this.keys.has('KeyW') || this.keys.has('ArrowUp')) dy -= 1;
       if (this.keys.has('KeyS') || this.keys.has('ArrowDown')) dy += 1;
       if (this.keys.has('KeyA') || this.keys.has('ArrowLeft')) dx -= 1;
       if (this.keys.has('KeyD') || this.keys.has('ArrowRight')) dx += 1;
+      keyboardMove = dx !== 0 || dy !== 0;
+      if (this.mobileMove) {
+        dx += this.mobileMove.x || 0;
+        dy += this.mobileMove.y || 0;
+      }
+      const moveStrength = keyboardMove
+        ? 1
+        : clamp(Math.hypot(
+          this.mobileMove ? this.mobileMove.x || 0 : 0,
+          this.mobileMove ? this.mobileMove.y || 0 : 0
+        ), 0, 1);
       // 开镜时移速下降，且不能冲刺
-      let sprint = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight');
+      let sprint = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight') ||
+        !!(this.mobileMove && this.mobileMove.sprint);
       if (p.scoping) sprint = false;
       const speedMul = p.scoping ? (wpn.scopeMoveMul || 0.55) : 1;
       const oldSpeed = p.speed;
       p.speed = oldSpeed * speedMul;
-      const moved = moveEntity(p, dx, dy, dt, this.buildings, sprint);
+      const moved = moveEntity(p, dx, dy, dt, this.buildings, sprint, moveStrength);
       p.speed = oldSpeed;
 
       if (moved) {
@@ -2267,7 +2523,11 @@ class Game {
           // 狙击后坐力更大
           const kick = getActiveWeapon(p).id === 'sniper' ? 5 : 1.8;
           this.shake = Math.min(10, this.shake + kick);
-          if (result.killed) this.addKillFeed(p.name, result.hit.name);
+          this.hitMarker = 0.14;
+          if (result.killed) {
+            this.killMarker = 0.3;
+            this.addKillFeed(p.name, result.hit.name);
+          }
         }
       }
 
@@ -3079,6 +3339,8 @@ class Game {
       rank: this.rank,
       result: this.result,
       hitFlash: this.hitFlash,
+      hitMarker: this.hitMarker,
+      killMarker: this.killMarker,
     };
   }
 }
@@ -3105,6 +3367,9 @@ let raf = 0;
 let last = 0;
 let playing = false;
 let selectedDiff = 'normal';
+let nextHudAt = 0;
+let nextMinimapAt = 0;
+const hudCache = {};
 
 const STORAGE_KEY = 'br_lite_v1';
 
@@ -3173,6 +3438,8 @@ function updateCrosshair() {
   crosshair.style.display = '';
   crosshair.style.left = pointer.x + 'px';
   crosshair.style.top = pointer.y + 'px';
+  crosshair.classList.toggle('hit', !!(game && game.hitMarker > 0 && game.killMarker <= 0));
+  crosshair.classList.toggle('kill', !!(game && game.killMarker > 0));
 }
 
 function syncMouseToGame() {
@@ -3225,6 +3492,10 @@ function startGame() {
     pointer.y = window.innerHeight / 2;
     pointer.down = false;
     pointer.right = false;
+    nextHudAt = 0;
+    nextMinimapAt = 0;
+    for (const k in hudCache) delete hudCache[k];
+    resetTouchControls();
     updateCrosshair();
     syncMouseToGame();
     try { window.focus(); } catch (e) {}
@@ -3234,6 +3505,9 @@ function startGame() {
 
     var hint = $('move-hint');
     if (hint) {
+      hint.textContent = isTouchMode()
+        ? '左摇杆移动 · 右摇杆瞄准射击 · 右侧按钮操作'
+        : 'WASD 移动 · 右键/C 开镜(狙击) · F 拾枪';
       hint.classList.remove('hidden', 'fade');
       setTimeout(function () { hint.classList.add('fade'); }, 5500);
       setTimeout(function () { hint.classList.add('hidden'); }, 6200);
@@ -3254,6 +3528,7 @@ function backToMenu() {
   if (hud) hud.classList.remove('playing');
   pointer.down = false;
   pointer.right = false;
+  resetTouchControls();
   game = null;
   refreshBestScoreUI();
 }
@@ -3264,8 +3539,10 @@ function togglePause() {
   if (game.paused) {
     pointer.down = false;
     pointer.right = false;
+    resetTouchControls();
     show(pauseScreen);
   } else {
+    last = performance.now();
     hide(pauseScreen);
   }
 }
@@ -3295,31 +3572,37 @@ function showResult() {
 function updateHud() {
   if (!game) return;
   const s = game.getHudState();
-  $('alive-count').textContent = '存活 ' + s.alive;
-  $('zone-info').textContent = s.zone;
-  $('kill-count').textContent = '击杀 ' + s.kills;
-  $('hp-text').textContent = s.hp + (s.maxHp ? '/' + s.maxHp : '');
-  $('armor-text').textContent = String(s.armor);
+  setHudText('alive', 'alive-count', '存活 ' + s.alive);
+  setHudText('zone', 'zone-info', s.zone);
+  setHudText('kills', 'kill-count', '击杀 ' + s.kills);
+  setHudText('hpText', 'hp-text', s.hp + (s.maxHp ? '/' + s.maxHp : ''));
+  setHudText('armorText', 'armor-text', String(s.armor));
   const hpPct = s.maxHp ? Math.max(0, Math.min(100, (s.hp / s.maxHp) * 100)) : s.hp;
-  $('hp-bar').style.width = hpPct + '%';
-  $('armor-bar').style.width = Math.max(0, Math.min(100, s.armor)) + '%';
-  $('weapon-name').textContent = s.weaponName;
-  $('ammo-text').textContent = s.ammo;
-  $('medkit-text').textContent = '医疗包 ×' + s.medkits + ' (Q/E)';
+  setHudWidth('hpWidth', 'hp-bar', hpPct);
+  setHudWidth('armorWidth', 'armor-bar', Math.max(0, Math.min(100, s.armor)));
+  setHudText('weapon', 'weapon-name', s.weaponName);
+  setHudText('ammo', 'ammo-text', s.ammo);
+  setHudText('medkits', 'medkit-text', '医疗包 ×' + s.medkits + ' (Q/E)');
 
   const slots = $('weapon-slots');
-  slots.innerHTML = s.weapons.map(function (w) {
-    return (
-      '<div class="slot ' +
-      (w.active ? 'active' : '') +
-      (w.empty ? ' empty' : '') +
-      '"><div class="key">' +
-      w.key +
-      '</div><div>' +
-      w.name +
-      '</div></div>'
-    );
-  }).join('');
+  const slotsKey = s.weapons.map(function (w) {
+    return w.key + ':' + w.name + ':' + (w.active ? 1 : 0) + ':' + (w.empty ? 1 : 0);
+  }).join('|');
+  if (hudCache.slots !== slotsKey) {
+    hudCache.slots = slotsKey;
+    slots.innerHTML = s.weapons.map(function (w, i) {
+      return (
+        '<div class="slot ' +
+        (w.active ? 'active' : '') +
+        (w.empty ? ' empty' : '') +
+        '" data-slot="' + i + '"><div class="key">' +
+        w.key +
+        '</div><div>' +
+        w.name +
+        '</div></div>'
+      );
+    }).join('');
+  }
 
   const hint = $('pickup-hint');
   if (s.nearLoot) {
@@ -3336,16 +3619,51 @@ function updateHud() {
   if (s.inZoneDamage) warn.classList.remove('hidden');
   else warn.classList.add('hidden');
 
-  $('kill-feed').innerHTML = game.killFeed
-    .map(function (k) {
-      return '<div class="kill-item">' + k.text + '</div>';
-    })
-    .join('');
+  const feedKey = game.killFeed.map(function (k) { return k.text; }).join('|');
+  if (hudCache.feed !== feedKey) {
+    hudCache.feed = feedKey;
+    $('kill-feed').innerHTML = game.killFeed
+      .map(function (k) {
+        return '<div class="kill-item">' + k.text + '</div>';
+      })
+      .join('');
+  }
+
+  const scopeBtn = $('touch-scope');
+  if (scopeBtn) {
+    scopeBtn.classList.toggle('unavailable', !s.canScope);
+    if (!s.canScope && pointer.right) {
+      pointer.right = false;
+      scopeBtn.classList.remove('active');
+    }
+  }
+}
+
+function setHudText(cacheKey, id, value) {
+  if (hudCache[cacheKey] === value) return;
+  hudCache[cacheKey] = value;
+  const el = $(id);
+  if (el) el.textContent = value;
+}
+
+function setHudWidth(cacheKey, id, value) {
+  const rounded = Math.round(value * 10) / 10;
+  if (hudCache[cacheKey] === rounded) return;
+  hudCache[cacheKey] = rounded;
+  const el = $(id);
+  if (el) el.style.width = rounded + '%';
 }
 
 function loop(ts) {
+  if (!game || !playing) {
+    raf = 0;
+    return;
+  }
   raf = requestAnimationFrame(loop);
-  if (!game || !playing) return;
+  if (game.paused) {
+    last = ts;
+    return;
+  }
 
   const dt = Math.min(0.05, (ts - last) / 1000);
   last = ts;
@@ -3354,15 +3672,24 @@ function loop(ts) {
   game.update(dt);
 
   game.draw(ctx, { width: window.innerWidth, height: window.innerHeight });
-  const ms = minimap ? minimap.width : 160;
-  game.drawMinimap(mctx, ms);
-  updateHud();
+  if (ts >= nextMinimapAt) {
+    const ms = minimap ? minimap.width : 160;
+    game.drawMinimap(mctx, ms);
+    nextMinimapAt = ts + 100;
+  }
+  if (ts >= nextHudAt) {
+    updateHud();
+    nextHudAt = ts + 50;
+  }
   updateCrosshair();
 
   if (game.ended) {
     playing = false;
+    cancelAnimationFrame(raf);
+    raf = 0;
     pointer.down = false;
     pointer.right = false;
+    resetTouchControls();
     setTimeout(showResult, 700);
   }
 }
@@ -3411,6 +3738,7 @@ bind('btn-menu', 'click', backToMenu);
 bind('btn-resume', 'click', function () {
   if (game) {
     game.paused = false;
+    last = performance.now();
     hide(pauseScreen);
   }
 });
@@ -3436,7 +3764,10 @@ for (let i = 0; i < diffBtns.length; i++) {
   });
 }
 
-window.addEventListener('resize', resize);
+window.addEventListener('resize', function () {
+  syncInputModeClass();
+  resize();
+});
 
 window.addEventListener('mousemove', function (e) {
   pointer.x = e.clientX;
@@ -3476,38 +3807,178 @@ window.addEventListener('mouseup', function (e) {
 window.addEventListener('blur', function () {
   pointer.down = false;
   pointer.right = false;
+  resetTouchControls();
   if (game) {
     game.mouse.down = false;
     game.mouse.right = false;
   }
 });
 
-// 触控：点哪瞄哪，双指不处理
-window.addEventListener('touchstart', function (e) {
-  if (!playing || !game) return;
-  if (e.touches.length === 1) {
-    const t = e.touches[0];
-    pointer.x = t.clientX;
-    pointer.y = t.clientY;
-    pointer.down = true;
-    syncMouseToGame();
-  }
-}, { passive: true });
+function isTouchMode() {
+  const coarse = !!(window.matchMedia &&
+    window.matchMedia('(hover: none) and (pointer: coarse)').matches);
+  const compactTouch = (navigator.maxTouchPoints || 0) > 0 && window.innerWidth <= 900;
+  return coarse || compactTouch;
+}
 
-window.addEventListener('touchmove', function (e) {
-  if (!playing || !game) return;
-  if (e.touches.length === 1) {
-    const t = e.touches[0];
-    pointer.x = t.clientX;
-    pointer.y = t.clientY;
-    syncMouseToGame();
-    updateCrosshair();
-  }
-}, { passive: true });
+function syncInputModeClass() {
+  document.documentElement.classList.toggle('touch-ui', isTouchMode());
+}
 
-window.addEventListener('touchend', function () {
+function resetTouchControls() {
+  pointer.down = false;
+  if (game) {
+    game.mouse.down = false;
+    game.mobileMove.x = 0;
+    game.mobileMove.y = 0;
+    game.mobileMove.sprint = false;
+  }
+  const knobs = document.querySelectorAll('.stick-knob');
+  for (let i = 0; i < knobs.length; i++) knobs[i].style.transform = 'translate(0, 0)';
+  const scopeBtn = $('touch-scope');
+  if (scopeBtn) scopeBtn.classList.remove('active');
+}
+
+function getStickVector(el, e) {
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const radius = Math.max(24, rect.width * 0.31);
+  let x = (e.clientX - cx) / radius;
+  let y = (e.clientY - cy) / radius;
+  const len = Math.hypot(x, y);
+  if (len > 1) {
+    x /= len;
+    y /= len;
+  }
+  const knob = el.querySelector('.stick-knob');
+  if (knob) knob.style.transform = 'translate(' + (x * radius) + 'px,' + (y * radius) + 'px)';
+  return { x: x, y: y, strength: Math.min(1, len) };
+}
+
+function bindTouchStick(id, onChange, onEnd) {
+  const el = $(id);
+  if (!el) return;
+  let activePointer = null;
+
+  function move(e) {
+    if (e.pointerId !== activePointer) return;
+    e.preventDefault();
+    e.stopPropagation();
+    onChange(getStickVector(el, e), e);
+  }
+
+  function end(e) {
+    if (e.pointerId !== activePointer) return;
+    e.preventDefault();
+    e.stopPropagation();
+    activePointer = null;
+    const knob = el.querySelector('.stick-knob');
+    if (knob) knob.style.transform = 'translate(0, 0)';
+    onEnd(e);
+  }
+
+  el.addEventListener('pointerdown', function (e) {
+    if (!playing || !game || game.paused || game.ended) return;
+    e.preventDefault();
+    e.stopPropagation();
+    activePointer = e.pointerId;
+    if (el.setPointerCapture) el.setPointerCapture(e.pointerId);
+    if (typeof SFX !== 'undefined') SFX.unlock();
+    onChange(getStickVector(el, e), e);
+  });
+  el.addEventListener('pointermove', move);
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+  el.addEventListener('lostpointercapture', function (e) {
+    if (e.pointerId === activePointer) end(e);
+  });
+}
+
+bindTouchStick('move-stick', function (v) {
+  if (!game) return;
+  game.mobileMove.x = v.x;
+  game.mobileMove.y = v.y;
+  game.mobileMove.sprint = v.strength > 0.88;
+}, function () {
+  if (!game) return;
+  game.mobileMove.x = 0;
+  game.mobileMove.y = 0;
+  game.mobileMove.sprint = false;
+});
+
+bindTouchStick('aim-stick', function (v) {
+  if (!game) return;
+  if (v.strength > 0.12) {
+    const reach = Math.min(390, Math.max(190, Math.min(window.innerWidth, window.innerHeight) * 0.48));
+    pointer.x = window.innerWidth / 2 + v.x * reach;
+    pointer.y = window.innerHeight / 2 + v.y * reach;
+  }
+  pointer.down = true;
+  syncMouseToGame();
+  updateCrosshair();
+}, function () {
   pointer.down = false;
   if (game) game.mouse.down = false;
+});
+
+function bindTouchAction(id, action) {
+  const el = $(id);
+  if (!el) return;
+  el.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!playing || !game || game.paused || game.ended) return;
+    if (typeof SFX !== 'undefined') SFX.unlock();
+    action(el);
+  });
+}
+
+bindTouchAction('touch-scope', function (el) {
+  const w = game && game.player ? getActiveWeapon(game.player) : null;
+  if (!canWeaponScope(w)) {
+    toast('当前武器不支持开镜');
+    return;
+  }
+  pointer.right = !pointer.right;
+  el.classList.toggle('active', pointer.right);
+  syncMouseToGame();
+});
+bindTouchAction('touch-reload', function () {
+  game.onKeyDown('KeyR');
+  game.onKeyUp('KeyR');
+});
+bindTouchAction('touch-medkit', function () {
+  game.onKeyDown('KeyQ');
+  game.onKeyUp('KeyQ');
+});
+bindTouchAction('touch-pickup', function () {
+  game.onKeyDown('KeyF');
+  game.onKeyUp('KeyF');
+});
+
+const weaponSlots = $('weapon-slots');
+if (weaponSlots) {
+  weaponSlots.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+  weaponSlots.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+  weaponSlots.addEventListener('click', function (e) {
+    const slot = e.target.closest ? e.target.closest('[data-slot]') : null;
+    if (!slot || !game || game.paused || game.ended) return;
+    const index = Number(slot.getAttribute('data-slot'));
+    if (!Number.isFinite(index)) return;
+    game.onKeyDown('Digit' + (index + 1));
+    game.onKeyUp('Digit' + (index + 1));
+    pointer.right = false;
+    const scopeBtn = $('touch-scope');
+    if (scopeBtn) scopeBtn.classList.remove('active');
+    updateHud();
+  });
+}
+
+document.addEventListener('visibilitychange', function () {
+  if (document.hidden && playing && game && !game.paused && !game.ended) {
+    togglePause();
+  }
 });
 
 window.addEventListener('keydown', function (e) {
@@ -3547,6 +4018,7 @@ window.addEventListener('dragstart', function (e) {
 });
 
 // 初始化
+syncInputModeClass();
 resize();
 updateCrosshair();
 
