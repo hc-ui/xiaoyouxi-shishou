@@ -636,11 +636,11 @@ kbd {
           <div><span>部署</span><strong>网页即玩</strong></div>
         </div>
         <div class="diff-row" id="diff-row">
-          <button type="button" class="diff-btn active" data-diff="easy">休闲</button>
-          <button type="button" class="diff-btn" data-diff="normal">标准</button>
+          <button type="button" class="diff-btn" data-diff="easy">休闲</button>
+          <button type="button" class="diff-btn active" data-diff="normal">标准</button>
           <button type="button" class="diff-btn" data-diff="hard">困难</button>
         </div>
-        <p class="menu-tips" id="menu-diff-tip">当前难度：休闲 · 8 人机</p>
+        <p class="menu-tips" id="menu-diff-tip">当前难度：标准 · 16 人机 · 会主动追杀</p>
         <button id="btn-start" class="btn primary" type="button">开始匹配</button>
         <div class="menu-actions">
           <button id="btn-share" class="btn ghost" type="button">复制链接分享</button>
@@ -730,139 +730,175 @@ window.onerror = function(msg, src, line, col, err) {
 };
 
 try {
-/** 游戏常量与武器 — 休闲优化版 */
+/** 游戏常量与武器 — 加强难度版 */
 
 const WORLD = {
   size: 2000,
-  botCount: 8,
+  botCount: 14,
 };
 
-/** 难度：easy | normal | hard */
-let GAME_DIFFICULTY = 'easy';
+/** 难度：easy | normal | hard —— 默认标准 */
+let GAME_DIFFICULTY = 'normal';
 
 const DIFFICULTY_PRESETS = {
   easy: {
-    botCount: 8,
-    botDamageMul: 0.45,
-    botAccuracyMin: 0.18,
-    botAccuracyMax: 0.42,
-    botShootChance: 0.38,
-    playerHp: 130,
-    playerStartArmor: 50,
-    playerStartMedkits: 3,
-    playerStartAmmo: 100,
+    botCount: 12,
+    botDamageMul: 0.72,
+    botAccuracyMin: 0.38,
+    botAccuracyMax: 0.58,
+    botShootChance: 0.62,
+    botEngageBonus: 70,
+    botHp: 90,
+    botArmedChance: 0.55,
+    botHuntChance: 0.35,
+    playerHp: 110,
+    playerStartArmor: 25,
+    playerStartMedkits: 1,
+    playerStartAmmo: 50,
+    playerInvuln: 1.0,
+    aimAssist: 0.1,
+    zoneScale: 1.0, // 毒圈节奏倍率（越小越紧）
     label: '休闲',
   },
   normal: {
-    botCount: 12,
-    botDamageMul: 0.7,
-    botAccuracyMin: 0.35,
-    botAccuracyMax: 0.6,
-    botShootChance: 0.55,
-    playerHp: 100,
-    playerStartArmor: 25,
-    playerStartMedkits: 1,
-    playerStartAmmo: 60,
-    label: '标准',
-  },
-  hard: {
     botCount: 16,
-    botDamageMul: 1.0,
+    botDamageMul: 0.95,
     botAccuracyMin: 0.5,
-    botAccuracyMax: 0.78,
-    botShootChance: 0.72,
+    botAccuracyMax: 0.72,
+    botShootChance: 0.78,
+    botEngageBonus: 100,
+    botHp: 100,
+    botArmedChance: 0.72,
+    botHuntChance: 0.55,
     playerHp: 100,
     playerStartArmor: 0,
     playerStartMedkits: 0,
-    playerStartAmmo: 30,
+    playerStartAmmo: 24,
+    playerInvuln: 0.6,
+    aimAssist: 0.06,
+    zoneScale: 0.85,
+    label: '标准',
+  },
+  hard: {
+    botCount: 22,
+    botDamageMul: 1.2,
+    botAccuracyMin: 0.62,
+    botAccuracyMax: 0.88,
+    botShootChance: 0.9,
+    botEngageBonus: 140,
+    botHp: 115,
+    botArmedChance: 0.88,
+    botHuntChance: 0.75,
+    playerHp: 90,
+    playerStartArmor: 0,
+    playerStartMedkits: 0,
+    playerStartAmmo: 12,
+    playerInvuln: 0.3,
+    aimAssist: 0.03,
+    zoneScale: 0.7,
     label: '困难',
   },
 };
 
 function applyDifficulty(level) {
-  const p = DIFFICULTY_PRESETS[level] || DIFFICULTY_PRESETS.easy;
+  const p = DIFFICULTY_PRESETS[level] || DIFFICULTY_PRESETS.normal;
   GAME_DIFFICULTY = level;
   WORLD.botCount = p.botCount;
   BALANCE.botDamageMul = p.botDamageMul;
   BALANCE.botAccuracyMin = p.botAccuracyMin;
   BALANCE.botAccuracyMax = p.botAccuracyMax;
   BALANCE.botShootChance = p.botShootChance;
+  BALANCE.botEngageBonus = p.botEngageBonus;
+  BALANCE.botHp = p.botHp;
+  BALANCE.botArmedChance = p.botArmedChance;
+  BALANCE.botHuntChance = p.botHuntChance;
   BALANCE.playerHp = p.playerHp;
   BALANCE.playerStartArmor = p.playerStartArmor;
   BALANCE.playerStartMedkits = p.playerStartMedkits;
   BALANCE.playerStartAmmo = p.playerStartAmmo;
+  BALANCE.playerInvuln = p.playerInvuln;
+  BALANCE.aimAssist = p.aimAssist;
+  BALANCE.scopeAimAssist = Math.max(0.08, p.aimAssist + 0.08);
+  BALANCE.zoneScale = p.zoneScale;
   return p;
 }
 
 const WEAPONS = {
   fists: {
-    id: 'fists', name: '拳头', damage: 16, range: 46, fireRate: 280,
+    id: 'fists', name: '拳头', damage: 14, range: 44, fireRate: 300,
     spread: 0.08, magSize: Infinity, reload: 0, bulletSpeed: 0,
     color: '#ccc', isMelee: true,
   },
   pistol: {
-    id: 'pistol', name: '手枪', damage: 28, range: 360, fireRate: 240,
-    spread: 0.035, magSize: 12, reload: 1000, bulletSpeed: 900,
+    id: 'pistol', name: '手枪', damage: 24, range: 340, fireRate: 250,
+    spread: 0.04, magSize: 12, reload: 1100, bulletSpeed: 900,
     color: '#f4d35e', isMelee: false,
   },
   smg: {
-    id: 'smg', name: '冲锋枪', damage: 17, range: 420, fireRate: 80,
-    spread: 0.08, magSize: 30, reload: 1400, bulletSpeed: 950,
+    id: 'smg', name: '冲锋枪', damage: 15, range: 400, fireRate: 85,
+    spread: 0.085, magSize: 30, reload: 1500, bulletSpeed: 950,
     color: '#4cc9f0', isMelee: false,
   },
   rifle: {
-    id: 'rifle', name: '步枪', damage: 34, range: 580, fireRate: 145,
-    spread: 0.028, magSize: 30, reload: 1700, bulletSpeed: 1100,
+    id: 'rifle', name: '步枪', damage: 30, range: 560, fireRate: 150,
+    spread: 0.03, magSize: 30, reload: 1800, bulletSpeed: 1100,
     color: '#3ddc97', isMelee: false,
   },
   shotgun: {
-    id: 'shotgun', name: '霰弹枪', damage: 15, range: 210, fireRate: 620,
-    spread: 0.18, magSize: 6, reload: 1900, bulletSpeed: 800,
+    id: 'shotgun', name: '霰弹枪', damage: 13, range: 200, fireRate: 650,
+    spread: 0.2, magSize: 6, reload: 2000, bulletSpeed: 800,
     pellets: 6, color: '#ff8fab', isMelee: false,
   },
   sniper: {
-    id: 'sniper', name: '狙击枪', damage: 78, range: 920, fireRate: 1100,
-    spread: 0.14, // 腰射很散
-    scopeSpread: 0.006, // 开镜极准
-    magSize: 5, reload: 2600, bulletSpeed: 1400,
+    id: 'sniper', name: '狙击枪', damage: 72, range: 900, fireRate: 1200,
+    spread: 0.16,
+    scopeSpread: 0.008,
+    magSize: 5, reload: 2800, bulletSpeed: 1400,
     color: '#c084fc', isMelee: false,
     canScope: true,
     scopeZoom: 2.35,
-    scopeMoveMul: 0.55,
+    scopeMoveMul: 0.5,
   },
 };
 
 const LOOT_TYPES = [
-  { kind: 'weapon', weaponId: 'pistol', label: '手枪', color: '#f4d35e', weight: 2.4 },
+  { kind: 'weapon', weaponId: 'pistol', label: '手枪', color: '#f4d35e', weight: 2.6 },
   { kind: 'weapon', weaponId: 'smg', label: '冲锋枪', color: '#4cc9f0', weight: 2.0 },
-  { kind: 'weapon', weaponId: 'rifle', label: '步枪', color: '#3ddc97', weight: 1.5 },
-  { kind: 'weapon', weaponId: 'shotgun', label: '霰弹枪', color: '#ff8fab', weight: 1.7 },
-  { kind: 'weapon', weaponId: 'sniper', label: '狙击枪', color: '#c084fc', weight: 0.9 },
-  { kind: 'ammo', amount: 45, label: '弹药', color: '#ffc857', weight: 4.8 },
-  { kind: 'medkit', amount: 1, label: '医疗包', color: '#3ddc97', weight: 3.8 },
-  { kind: 'armor', amount: 50, label: '护甲', color: '#3a86ff', weight: 3.2 },
+  { kind: 'weapon', weaponId: 'rifle', label: '步枪', color: '#3ddc97', weight: 1.4 },
+  { kind: 'weapon', weaponId: 'shotgun', label: '霰弹枪', color: '#ff8fab', weight: 1.6 },
+  { kind: 'weapon', weaponId: 'sniper', label: '狙击枪', color: '#c084fc', weight: 0.7 },
+  { kind: 'ammo', amount: 30, label: '弹药', color: '#ffc857', weight: 4.0 },
+  { kind: 'medkit', amount: 1, label: '医疗包', color: '#3ddc97', weight: 2.4 },
+  { kind: 'armor', amount: 40, label: '护甲', color: '#3a86ff', weight: 2.2 },
 ];
 
 const BOT_NAMES = [
   'Shadow', 'Viper', 'Nova', 'Rex', 'Kite',
   'Blaze', 'Frost', 'Echo', 'Raven', 'Drift',
   'Pulse', 'Ghost', 'Hawk', 'Bolt', 'Ash',
+  'Zero', 'Luna', 'Ace', 'Jade', 'Orion',
+  'Spectre', 'Wolf', 'Fang', 'Storm', 'Reaper',
 ];
 
 const BALANCE = {
-  botDamageMul: 0.48,
-  botAccuracyMin: 0.2,
-  botAccuracyMax: 0.45,
-  botEngageBonus: 30,
-  botShootChance: 0.4,
-  playerStartArmor: 45,
-  playerStartMedkits: 2,
-  playerStartAmmo: 90,
-  playerHp: 125,
-  autoPickupR: 30,
-  aimAssist: 0.12, // 轻微辅助瞄准
-  lookAhead: 0.18, // 镜头朝瞄准方向微移
-  scopeAimAssist: 0.22, // 开镜时稍强吸附
+  botDamageMul: 0.95,
+  botAccuracyMin: 0.5,
+  botAccuracyMax: 0.72,
+  botEngageBonus: 100,
+  botShootChance: 0.78,
+  botHp: 100,
+  botArmedChance: 0.72,
+  botHuntChance: 0.55,
+  playerStartArmor: 0,
+  playerStartMedkits: 0,
+  playerStartAmmo: 24,
+  playerHp: 100,
+  playerInvuln: 0.6,
+  autoPickupR: 28,
+  aimAssist: 0.06,
+  lookAhead: 0.16,
+  scopeAimAssist: 0.14,
+  zoneScale: 0.85,
 };
 
 function pickLootType() {
@@ -1205,10 +1241,10 @@ function createLoot(buildings) {
   // 出生点附近保底物资
   const cx = WORLD.size / 2;
   const cy = WORLD.size / 2;
-  loot.push(makeLootItem(cx + 40, cy + 20, 'weapon', 'pistol'));
-  loot.push(makeLootItem(cx - 50, cy + 30, 'ammo', null, 40));
-  loot.push(makeLootItem(cx + 20, cy - 55, 'medkit', null, 1));
-  loot.push(makeLootItem(cx - 30, cy - 40, 'armor', null, 50));
+  // 出生点只有少量保底，不再白给套装
+  loot.push(makeLootItem(cx + 55, cy + 30, 'weapon', 'pistol'));
+  loot.push(makeLootItem(cx - 40, cy + 45, 'ammo', null, 20));
+  if (Math.random() < 0.45) loot.push(makeLootItem(cx + 25, cy - 50, 'medkit', null, 1));
   // 地图上固定刷新几把狙击（稀有）
   const sniperSpots = [
     [320, 360], [1680, 380], [350, 1620], [1650, 1580], [1000, 280], [1000, 1720],
@@ -1327,39 +1363,41 @@ function segmentsIntersect(x1, y1, x2, y2, x3, y3, x4, y4) {
 }
 
 
-/** 缩圈系统 — 更慢、更温和 */
+/** 缩圈系统 — 更紧、更疼（受 BALANCE.zoneScale 影响） */
 
 class Zone {
   constructor() {
+    const s = BALANCE.zoneScale != null ? BALANCE.zoneScale : 0.85;
     this.cx = WORLD.size / 2;
     this.cy = WORLD.size / 2;
-    this.radius = WORLD.size * 0.78;
+    this.radius = WORLD.size * 0.72;
     this.targetCx = this.cx;
     this.targetCy = this.cy;
     this.targetRadius = this.radius;
     this.phase = 0;
-    this.timer = 40; // 首圈更久
+    this.timer = Math.max(12, 28 * s);
     this.state = 'wait';
-    this.damage = 1;
+    this.damage = 2.5;
+    // wait/shrink 会乘 zoneScale（越小节奏越快）
     this.phases = [
-      { wait: 40, shrink: 35, radius: WORLD.size * 0.55, dmg: 1.5 },
-      { wait: 28, shrink: 32, radius: WORLD.size * 0.34, dmg: 2.5 },
-      { wait: 22, shrink: 28, radius: WORLD.size * 0.18, dmg: 4 },
-      { wait: 16, shrink: 24, radius: WORLD.size * 0.09, dmg: 7 },
+      { wait: 28 * s, shrink: 26 * s, radius: WORLD.size * 0.48, dmg: 4 },
+      { wait: 18 * s, shrink: 22 * s, radius: WORLD.size * 0.28, dmg: 7 },
+      { wait: 12 * s, shrink: 18 * s, radius: WORLD.size * 0.14, dmg: 12 },
+      { wait: 8 * s, shrink: 14 * s, radius: WORLD.size * 0.06, dmg: 18 },
     ];
     this._pickNextTarget();
   }
 
   _pickNextTarget() {
     if (this.phase >= this.phases.length) {
-      this.targetRadius = Math.max(50, this.radius * 0.55);
-      this.targetCx = this.cx + (Math.random() - 0.5) * this.radius * 0.25;
-      this.targetCy = this.cy + (Math.random() - 0.5) * this.radius * 0.25;
+      this.targetRadius = Math.max(40, this.radius * 0.5);
+      this.targetCx = this.cx + (Math.random() - 0.5) * this.radius * 0.28;
+      this.targetCy = this.cy + (Math.random() - 0.5) * this.radius * 0.28;
       return;
     }
     const p = this.phases[this.phase];
     this.targetRadius = p.radius;
-    const maxShift = Math.max(0, this.radius - this.targetRadius) * 0.45;
+    const maxShift = Math.max(0, this.radius - this.targetRadius) * 0.55;
     this.targetCx = this.cx + (Math.random() - 0.5) * maxShift * 2;
     this.targetCy = this.cy + (Math.random() - 0.5) * maxShift * 2;
     this.targetCx = Math.max(this.targetRadius, Math.min(WORLD.size - this.targetRadius, this.targetCx));
@@ -1372,7 +1410,7 @@ class Zone {
       if (this.timer <= 0) {
         this.state = 'shrink';
         const p = this.phases[Math.min(this.phase, this.phases.length - 1)];
-        this.timer = p ? p.shrink : 24;
+        this.timer = p ? p.shrink : 16;
         this.shrinkDuration = this.timer;
         this.startRadius = this.radius;
         this.startCx = this.cx;
@@ -1380,7 +1418,7 @@ class Zone {
       }
     } else {
       const p = this.phases[Math.min(this.phase, this.phases.length - 1)];
-      const dur = this.shrinkDuration || 24;
+      const dur = this.shrinkDuration || 16;
       const t = 1 - Math.max(0, this.timer) / dur;
       const ease = t * t * (3 - 2 * t);
       this.radius = this.startRadius + (this.targetRadius - this.startRadius) * ease;
@@ -1393,7 +1431,7 @@ class Zone {
         if (p) this.damage = p.dmg;
         this.phase += 1;
         this.state = 'wait';
-        this.timer = this.phases[this.phase] ? this.phases[this.phase].wait : 14;
+        this.timer = this.phases[this.phase] ? this.phases[this.phase].wait : 10;
         this._pickNextTarget();
       }
     }
@@ -1415,7 +1453,11 @@ class Zone {
 let nameIndex = 0;
 
 function createPlayer(x, y) {
-  const pistol = cloneWeapon(WEAPONS.pistol);
+  const giveGun = BALANCE.playerStartAmmo > 0;
+  const pistol = giveGun ? cloneWeapon(WEAPONS.pistol) : null;
+  const weapons = [cloneWeapon(WEAPONS.fists), pistol, null, null];
+  const mag = { fists: Infinity };
+  if (pistol) mag.pistol = Math.min(pistol.magSize, 8);
   return {
     id: 'player',
     name: '你',
@@ -1427,24 +1469,24 @@ function createPlayer(x, y) {
     maxHp: BALANCE.playerHp,
     armor: BALANCE.playerStartArmor,
     maxArmor: 100,
-    speed: 180,
-    sprintMul: 1.52,
+    speed: 175,
+    sprintMul: 1.48,
     alive: true,
     isPlayer: true,
-    weapons: [cloneWeapon(WEAPONS.fists), pistol, null, null],
-    weaponIndex: 1,
-    mag: { fists: Infinity, pistol: pistol.magSize },
+    weapons: weapons,
+    weaponIndex: pistol ? 1 : 0,
+    mag: mag,
     reserveAmmo: BALANCE.playerStartAmmo,
     medkits: BALANCE.playerStartMedkits,
     kills: 0,
     lastShot: 0,
     reloading: false,
     reloadEnd: 0,
-    invuln: 2,
+    invuln: BALANCE.playerInvuln != null ? BALANCE.playerInvuln : 0.6,
     color: '#3ddc97',
     lastHurt: 0,
     footsteps: 0,
-    scoping: false, // 开镜中
+    scoping: false,
   };
 }
 
@@ -1452,6 +1494,8 @@ function createBot(buildings, playerPos) {
   let x;
   let y;
   let tries = 0;
+  // 安全距离缩短，落地更容易遭遇
+  const safeDist = GAME_DIFFICULTY === 'hard' ? 180 : GAME_DIFFICULTY === 'normal' ? 220 : 260;
   do {
     x = randRange(80, WORLD.size - 80);
     y = randRange(80, WORLD.size - 80);
@@ -1461,19 +1505,29 @@ function createBot(buildings, playerPos) {
     (buildings.some(function (b) {
       return x > b.x - 20 && x < b.x + b.w + 20 && y > b.y - 20 && y < b.y + b.h + 20;
     }) ||
-      (playerPos && dist({ x: x, y: y }, playerPos) < 300))
+      (playerPos && dist({ x: x, y: y }, playerPos) < safeDist))
   );
 
   const name = BOT_NAMES[nameIndex % BOT_NAMES.length];
   nameIndex++;
 
-  const starter =
-    Math.random() < 0.25
-      ? cloneWeapon(WEAPONS[Math.random() < 0.75 ? 'pistol' : 'shotgun'])
-      : cloneWeapon(WEAPONS.fists);
+  const armed = Math.random() < (BALANCE.botArmedChance || 0.7);
+  let starter;
+  if (armed) {
+    const roll = Math.random();
+    let id = 'pistol';
+    if (roll < 0.28) id = 'smg';
+    else if (roll < 0.48) id = 'shotgun';
+    else if (roll < 0.68) id = 'rifle';
+    else if (roll < 0.78) id = 'sniper';
+    starter = cloneWeapon(WEAPONS[id]);
+  } else {
+    starter = cloneWeapon(WEAPONS.fists);
+  }
 
   const mag = {};
   mag[starter.id] = starter.magSize === Infinity ? Infinity : starter.magSize;
+  const hp = BALANCE.botHp || 100;
 
   return {
     id: 'bot-' + nameIndex,
@@ -1482,33 +1536,34 @@ function createBot(buildings, playerPos) {
     y: y,
     r: 14,
     angle: Math.random() * Math.PI * 2,
-    hp: 72,
-    maxHp: 72,
-    armor: Math.random() < 0.1 ? 15 : 0,
+    hp: hp,
+    maxHp: hp,
+    armor: Math.random() < 0.35 ? randRange(20, 50) : (Math.random() < 0.2 ? 15 : 0),
     maxArmor: 100,
-    speed: randRange(112, 138),
-    sprintMul: 1.22,
+    speed: randRange(145, 175),
+    sprintMul: 1.38,
     alive: true,
     isPlayer: false,
     weapons: [starter, null, null, null],
     weaponIndex: 0,
     mag: mag,
-    reserveAmmo: 6 + Math.floor(Math.random() * 14),
-    medkits: Math.random() < 0.12 ? 1 : 0,
+    reserveAmmo: 18 + Math.floor(Math.random() * 40),
+    medkits: Math.random() < 0.35 ? 1 : 0,
     kills: 0,
     lastShot: 0,
     reloading: false,
     reloadEnd: 0,
     invuln: 0,
-    color: 'hsl(' + Math.floor(Math.random() * 360) + ', 38%, 46%)',
-    state: 'loot',
+    color: 'hsl(' + Math.floor(Math.random() * 360) + ', 42%, 48%)',
+    state: Math.random() < (BALANCE.botHuntChance || 0.5) ? 'hunt' : 'loot',
     target: null,
     wanderAngle: Math.random() * Math.PI * 2,
-    stateTimer: 0,
-    aimJitter: randRange(-0.3, 0.3),
+    stateTimer: randRange(0.5, 2),
+    aimJitter: randRange(-0.1, 0.1),
     accuracy: randRange(BALANCE.botAccuracyMin, BALANCE.botAccuracyMax),
-    reaction: randRange(0.25, 0.65),
+    reaction: randRange(0.55, 0.95),
     lastHurt: 0,
+    aggression: randRange(0.55, 1),
   };
 }
 
@@ -1671,7 +1726,8 @@ function fireWeapon(entity, now, aimAngle, buildings, others, bullets, sparks) {
   else if (canWeaponScope(w) && !scoped) baseSpread = w.spread * 1.15;
 
   for (let i = 0; i < pellets; i++) {
-    let extraSpread = entity.isPlayer ? 0 : 0.14;
+    // 人机散布减小，更会打中
+    let extraSpread = entity.isPlayer ? 0 : 0.04;
     if (entity.isPlayer && scoped) extraSpread = 0;
     const spread = (Math.random() - 0.5) * (baseSpread + extraSpread) * 2;
     const ang = aimAngle + spread;
@@ -1768,118 +1824,182 @@ function updateBot(bot, dt, now, game) {
     bot.target = null;
   }
 
-  if (bot.hp < 32 && bot.medkits > 0 && Math.random() < 0.02) useMedkit(bot);
+  if (bot.hp < 45 && bot.medkits > 0 && Math.random() < 0.04) useMedkit(bot);
 
   const enemies = game.aliveEntities().filter(function (e) {
     return e !== bot && e.alive;
   });
   let nearestEnemy = null;
   let nearestDist = Infinity;
+  let playerEnemy = null;
+  let playerDist = Infinity;
   for (let i = 0; i < enemies.length; i++) {
-    const d = dist(bot, enemies[i]);
+    const e = enemies[i];
+    const d = dist(bot, e);
     if (d < nearestDist) {
       nearestDist = d;
-      nearestEnemy = enemies[i];
+      nearestEnemy = e;
+    }
+    if (e.isPlayer) {
+      playerEnemy = e;
+      playerDist = d;
     }
   }
 
-  const w = getActiveWeapon(bot);
-  const engageRange = (w.isMelee ? 65 : w.range * 0.5) + BALANCE.botEngageBonus;
+  const huntMul = bot.aggression || 0.7;
+  if (
+    playerEnemy &&
+    playerDist < 520 * huntMul + (BALANCE.botEngageBonus || 80) &&
+    bot.state !== 'zone' &&
+    Math.random() < (BALANCE.botHuntChance || 0.5) * 0.08
+  ) {
+    bot.state = 'hunt';
+    bot.target = playerEnemy;
+  }
 
-  if (bot.state !== 'zone' && nearestEnemy && nearestDist < engageRange) {
-    if (canSee(bot, nearestEnemy, game.buildings) && Math.random() < bot.reaction * 0.9) {
+  const w = getActiveWeapon(bot);
+  const engageRange = (w.isMelee ? 70 : w.range * 0.72) + (BALANCE.botEngageBonus || 80);
+
+  if (bot.state !== 'zone' && nearestEnemy && nearestDist < engageRange + 80) {
+    const see = canSee(bot, nearestEnemy, game.buildings);
+    if ((see || nearestDist < 140) && Math.random() < bot.reaction) {
       bot.state = 'fight';
       bot.target = nearestEnemy;
     }
+  }
+
+  if (bot.lastHurt > 0.2 && nearestEnemy && nearestDist < engageRange + 120) {
+    bot.state = 'fight';
+    bot.target = nearestEnemy;
   }
 
   if (bot.state === 'zone') {
     const ang = angleTo(bot, { x: game.zone.cx, y: game.zone.cy });
     moveEntity(bot, Math.cos(ang), Math.sin(ang), dt, game.buildings, true);
     bot.angle = ang;
+    if (nearestEnemy && nearestDist < engageRange * 0.9 && canSee(bot, nearestEnemy, game.buildings)) {
+      bot.angle = angleTo(bot, nearestEnemy) + bot.aimJitter * 0.5;
+      maybeBotShoot(bot, now, game);
+    }
     if (!game.zone.isOutside(bot)) {
-      bot.state = 'loot';
-      bot.stateTimer = 2;
+      bot.state = Math.random() < 0.5 ? 'hunt' : 'loot';
+      bot.stateTimer = 1.2;
     }
     return;
   }
 
+  if (bot.state === 'hunt') {
+    const prey = (bot.target && bot.target.alive) ? bot.target : (playerEnemy || nearestEnemy);
+    if (!prey) {
+      bot.state = 'loot';
+      bot.stateTimer = 1;
+    } else {
+      bot.target = prey;
+      const d = dist(bot, prey);
+      bot.angle = angleTo(bot, prey) + bot.aimJitter * (0.8 - bot.accuracy * 0.5);
+      if (d > 60) {
+        moveEntity(bot, Math.cos(bot.angle), Math.sin(bot.angle), dt, game.buildings, d > 180);
+      }
+      if (d < engageRange + 40 && (canSee(bot, prey, game.buildings) || d < 100)) {
+        bot.state = 'fight';
+      }
+      if (bot.stateTimer <= 0 && d > 600) {
+        bot.state = 'loot';
+        bot.stateTimer = 2;
+      }
+    }
+  }
+
   if (bot.state === 'fight' && bot.target && bot.target.alive) {
     const d = dist(bot, bot.target);
-    bot.angle = angleTo(bot, bot.target) + bot.aimJitter * (1.25 - bot.accuracy);
+    const jitterScale = d < 160 ? 0.35 : 0.9;
+    bot.angle = angleTo(bot, bot.target) + bot.aimJitter * (1.05 - bot.accuracy) * jitterScale;
 
-    if (bot.hp < 30 && d < 220) {
+    if (bot.hp < 18 && d < 160 && Math.random() < 0.4) {
       const flee = angleTo(bot.target, bot);
       moveEntity(bot, Math.cos(flee), Math.sin(flee), dt, game.buildings, true);
       bot.angle = flee;
-      bot.stateTimer = 1.2;
-      if (d > 180) {
-        bot.state = 'wander';
-        bot.target = null;
-      }
-      return;
-    }
-
-    if (d > engageRange * 0.72) {
-      moveEntity(bot, Math.cos(bot.angle), Math.sin(bot.angle), dt, game.buildings, false);
-    } else if (d < 95 && !w.isMelee) {
-      moveEntity(bot, -Math.cos(bot.angle), -Math.sin(bot.angle), dt, game.buildings, true);
+    } else if (d > engageRange * 0.55) {
+      moveEntity(bot, Math.cos(bot.angle), Math.sin(bot.angle), dt, game.buildings, d > 200);
+    } else if (d < 70 && !w.isMelee && w.id !== 'shotgun') {
+      moveEntity(bot, -Math.cos(bot.angle), -Math.sin(bot.angle), dt, game.buildings, false);
     } else {
-      const side = Math.cos(bot.angle + Math.PI / 2) * (Math.sin(now / 420) > 0 ? 1 : -1);
-      const sidY = Math.sin(bot.angle + Math.PI / 2) * (Math.sin(now / 420) > 0 ? 1 : -1);
-      moveEntity(bot, side, sidY, dt, game.buildings, false);
+      const side = Math.cos(bot.angle + Math.PI / 2) * (Math.sin(now / 280) > 0 ? 1 : -1);
+      const sidY = Math.sin(bot.angle + Math.PI / 2) * (Math.sin(now / 280) > 0 ? 1 : -1);
+      moveEntity(bot, side * 0.7 + Math.cos(bot.angle) * 0.3, sidY * 0.7 + Math.sin(bot.angle) * 0.3, dt, game.buildings, false);
     }
 
-    if (d < engageRange && canSee(bot, bot.target, game.buildings)) maybeBotShoot(bot, now, game);
+    if (d < engageRange + 30 && (canSee(bot, bot.target, game.buildings) || d < 90)) {
+      maybeBotShoot(bot, now, game);
+    }
 
-    if (d > engageRange + 200 || !bot.target.alive) {
-      bot.state = 'loot';
-      bot.target = null;
-      bot.stateTimer = 1.5;
+    if (d > engageRange + 280 || !bot.target.alive) {
+      bot.state = Math.random() < (BALANCE.botHuntChance || 0.5) ? 'hunt' : 'loot';
+      bot.target = bot.target && bot.target.alive ? bot.target : null;
+      bot.stateTimer = 1.2;
     }
     return;
   }
 
   if (bot.stateTimer <= 0) {
-    let best = null;
-    let bestD = 340;
-    for (let i = 0; i < game.loot.length; i++) {
-      const item = game.loot[i];
-      if (item.taken) continue;
-      const d = dist(bot, item);
-      if (d < bestD) {
-        bestD = d;
-        best = item;
-      }
-    }
-    if (best) {
-      bot.target = best;
-      bot.state = 'loot';
-      bot.stateTimer = 5;
+    const late = game.zone && game.zone.phase >= 1;
+    if (late && nearestEnemy && nearestDist < 480 && Math.random() < 0.55) {
+      bot.state = 'hunt';
+      bot.target = nearestEnemy;
+      bot.stateTimer = 3;
     } else {
-      bot.wanderAngle += randRange(-0.9, 0.9);
-      bot.state = 'wander';
-      bot.stateTimer = randRange(2, 4.5);
-      bot.target = null;
+      let best = null;
+      let bestD = 300;
+      for (let i = 0; i < game.loot.length; i++) {
+        const item = game.loot[i];
+        if (item.taken) continue;
+        const prefer = item.kind === 'weapon' ? 0.65 : 1;
+        const d = dist(bot, item) * prefer;
+        if (d < bestD) {
+          bestD = d;
+          best = item;
+        }
+      }
+      const armed = getActiveWeapon(bot) && !getActiveWeapon(bot).isMelee;
+      if (best && (!armed || Math.random() < 0.55)) {
+        bot.target = best;
+        bot.state = 'loot';
+        bot.stateTimer = 4;
+      } else if (playerEnemy && Math.random() < (BALANCE.botHuntChance || 0.5)) {
+        bot.state = 'hunt';
+        bot.target = playerEnemy;
+        bot.stateTimer = 4;
+      } else {
+        bot.wanderAngle += randRange(-0.7, 0.7);
+        bot.state = 'wander';
+        bot.stateTimer = randRange(1.2, 2.8);
+        bot.target = null;
+      }
     }
   }
 
-  if (bot.state === 'loot' && bot.target && !bot.target.taken) {
+  if (bot.state === 'loot' && bot.target && bot.target.taken === false) {
     const ang = angleTo(bot, bot.target);
     const dLoot = dist(bot, bot.target);
     bot.angle = ang;
-    moveEntity(bot, Math.cos(ang), Math.sin(ang), dt, game.buildings, dLoot > 100);
+    moveEntity(bot, Math.cos(ang), Math.sin(ang), dt, game.buildings, dLoot > 90);
     if (dLoot < 28) {
-      pickupLoot(bot, bot.target);
+      pickupLoot(bot, bot.target, true);
       bot.target = null;
-      bot.stateTimer = 0.3;
+      bot.stateTimer = 0.15;
+      if (Math.random() < 0.6) {
+        bot.state = 'hunt';
+        bot.stateTimer = 2;
+      }
     }
-  } else {
-    moveEntity(bot, Math.cos(bot.wanderAngle), Math.sin(bot.wanderAngle), dt, game.buildings, false);
+  } else if (bot.state === 'wander' || (bot.state !== 'hunt' && bot.state !== 'fight' && bot.state !== 'loot')) {
+    moveEntity(bot, Math.cos(bot.wanderAngle), Math.sin(bot.wanderAngle), dt, game.buildings, Math.random() < 0.3);
     bot.angle = bot.wanderAngle;
     if (bot.x < 40 || bot.x > WORLD.size - 40 || bot.y < 40 || bot.y > WORLD.size - 40) {
       bot.wanderAngle += Math.PI + randRange(-0.5, 0.5);
     }
+  } else if (bot.state === 'loot' && (!bot.target || bot.target.taken)) {
+    bot.stateTimer = 0;
   }
 }
 
@@ -1890,11 +2010,15 @@ function maybeBotShoot(bot, now, game) {
     tryReload(bot, now);
     return;
   }
-  if (Math.random() > bot.accuracy * BALANCE.botShootChance) return;
+  if (Math.random() > Math.min(0.98, bot.accuracy * BALANCE.botShootChance * 1.15)) return;
+  let ang = bot.angle;
+  if (bot.target && bot.target.alive) {
+    ang = angleTo(bot, bot.target) + bot.aimJitter * (1 - bot.accuracy) * 0.6;
+  }
   const result = fireWeapon(
     bot,
     now,
-    bot.angle,
+    ang,
     game.buildings,
     game.aliveEntities(),
     game.bullets,
@@ -2980,7 +3104,7 @@ let game = null;
 let raf = 0;
 let last = 0;
 let playing = false;
-let selectedDiff = 'easy';
+let selectedDiff = 'normal';
 
 const STORAGE_KEY = 'br_lite_v1';
 
@@ -3432,7 +3556,7 @@ if (stored.muted && typeof SFX !== 'undefined') {
   if (!SFX.isMuted()) SFX.toggleMute();
   if (muteBtn) muteBtn.textContent = '音效：关';
 }
-setDifficulty(stored.difficulty || 'easy');
+setDifficulty(stored.difficulty || 'normal');
 refreshBestScoreUI();
 
   var ok = document.getElementById('boot-ok');
