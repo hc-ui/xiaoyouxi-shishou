@@ -35,11 +35,11 @@ const html = `<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="description" content="免费网页大逃杀：缩圈、搜打装、狙击开镜、人机对战。点开即玩，无需下载。" />
   <meta name="theme-color" content="#0b0f14" />
-  <meta property="og:title" content="大逃杀 · 轻量版 Battle Royale Lite" />
+  <meta property="og:title" content="小游戏试手 · 大逃杀轻量版" />
   <meta property="og:description" content="浏览器里玩的吃鸡小游戏：缩圈、搜打装、狙击开镜。免费在线。" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary" />
-  <title>大逃杀轻量版 · Battle Royale Lite</title>
+  <title>小游戏试手 · 大逃杀轻量版</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect fill='%230b0f14' width='64' height='64' rx='12'/%3E%3Ccircle cx='32' cy='32' r='14' fill='none' stroke='%233ddc97' stroke-width='4'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%23c084fc'/%3E%3C/svg%3E" />
   <style>
 ${css}
@@ -51,7 +51,7 @@ ${css}
     <div id="menu" class="screen">
       <div class="menu-card">
         <p class="badge">BATTLE ROYALE LITE · ONLINE</p>
-        <h1>大逃杀 · 轻量版</h1>
+        <h1>小游戏试手 · 大逃杀</h1>
         <p class="subtitle">缩圈 · 搜打装 · 狙击开镜 · 最后一人获胜</p>
         <div class="menu-stats">
           <div><span>地图</span><strong>2000×2000</strong></div>
@@ -70,7 +70,7 @@ ${css}
           <button id="btn-fullscreen" class="btn ghost" type="button">全屏</button>
         </div>
         <p class="best-score" id="best-score">历史最佳击杀 0 · 吃鸡 0 次</p>
-        <div class="controls-hint">
+        <div class="controls-hint desktop-only">
           <h3>操作说明</h3>
           <ul>
             <li><kbd>W A S D</kbd> 移动 · <kbd>Shift</kbd> 冲刺</li>
@@ -78,6 +78,14 @@ ${css}
             <li><kbd>右键</kbd> / <kbd>C</kbd> 狙击开镜（约 2.3×）</li>
             <li><kbd>R</kbd> 换弹 · <kbd>F</kbd> 拾枪 · 补给自动捡</li>
             <li><kbd>1-4</kbd> 切枪 · <kbd>Q/E</kbd> 医疗 · <kbd>M</kbd> 音效</li>
+          </ul>
+        </div>
+        <div class="controls-hint touch-only">
+          <h3>触屏操作</h3>
+          <ul>
+            <li>左摇杆移动，推到底自动冲刺</li>
+            <li>右摇杆瞄准并射击，点武器栏切枪</li>
+            <li>使用右侧按钮开镜、换弹、医疗和拾取</li>
           </ul>
         </div>
         <p class="menu-tips">纯前端单机 · 可发给好友用浏览器打开</p>
@@ -113,6 +121,20 @@ ${css}
       <div id="pickup-hint" class="hidden"></div>
       <div id="zone-warn" class="hidden">毒圈伤害中！跟随紫色箭头进圈</div>
       <div id="move-hint" class="hidden">WASD 移动 · 右键/C 开镜(狙击) · F 拾枪</div>
+      <div id="mobile-controls" aria-label="触屏操作">
+        <div id="move-stick" class="touch-stick" aria-label="移动摇杆">
+          <div class="stick-knob"></div>
+        </div>
+        <div id="aim-stick" class="touch-stick" aria-label="瞄准与射击摇杆">
+          <div class="stick-knob"></div>
+        </div>
+        <div class="touch-actions">
+          <button id="touch-scope" class="touch-btn" type="button" aria-label="切换开镜">镜</button>
+          <button id="touch-reload" class="touch-btn" type="button" aria-label="换弹">换</button>
+          <button id="touch-medkit" class="touch-btn" type="button" aria-label="使用医疗包">医</button>
+          <button id="touch-pickup" class="touch-btn" type="button" aria-label="拾取物资">拾</button>
+        </div>
+      </div>
     </div>
 
     <div id="pause" class="screen hidden">

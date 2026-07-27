@@ -210,13 +210,14 @@ function useMedkit(entity) {
   return true;
 }
 
-function moveEntity(entity, dx, dy, dt, buildings, sprint) {
+function moveEntity(entity, dx, dy, dt, buildings, sprint, speedFactor) {
   if (!entity.alive) return false;
   const len = Math.hypot(dx, dy);
   if (len > 0) {
     dx /= len;
     dy /= len;
-    const spd = entity.speed * (sprint ? entity.sprintMul : 1);
+    const analog = speedFactor == null ? 1 : clamp(speedFactor, 0, 1);
+    const spd = entity.speed * (sprint ? entity.sprintMul : 1) * analog;
     entity.x += dx * spd * dt;
     entity.y += dy * spd * dt;
     resolveCircleBuilding(entity, buildings);

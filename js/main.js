@@ -15,6 +15,9 @@ let raf = 0;
 let last = 0;
 let playing = false;
 let selectedDiff = 'normal';
+let nextHudAt = 0;
+let nextMinimapAt = 0;
+const hudCache = {};
 
 const STORAGE_KEY = 'br_lite_v1';
 
@@ -83,6 +86,8 @@ function updateCrosshair() {
   crosshair.style.display = '';
   crosshair.style.left = pointer.x + 'px';
   crosshair.style.top = pointer.y + 'px';
+  crosshair.classList.toggle('hit', !!(game && game.hitMarker > 0 && game.killMarker <= 0));
+  crosshair.classList.toggle('kill', !!(game && game.killMarker > 0));
 }
 
 function syncMouseToGame() {
@@ -135,6 +140,10 @@ function startGame() {
     pointer.y = window.innerHeight / 2;
     pointer.down = false;
     pointer.right = false;
+    nextHudAt = 0;
+    nextMinimapAt = 0;
+    for (const k in hudCache) delete hudCache[k];
+    resetTouchControls();
     updateCrosshair();
     syncMouseToGame();
     try { window.focus(); } catch (e) {}
@@ -144,6 +153,9 @@ function startGame() {
 
     var hint = $('move-hint');
     if (hint) {
+      hint.textContent = isTouchMode()
+        ? '左摇杆移动 · 右摇杆瞄准射击 · 右侧按钮操作'
+        : 'WASD 移动 · 右键/C 开镜(狙击) · F 拾枪';
       hint.classList.remove('hidden', 'fade');
       setTimeout(function () { hint.classList.add('fade'); }, 5500);
       setTimeout(function () { hint.classList.add('hidden'); }, 6200);
@@ -164,6 +176,7 @@ function backToMenu() {
   if (hud) hud.classList.remove('playing');
   pointer.down = false;
   pointer.right = false;
+  resetTouchControls();
   game = null;
   refreshBestScoreUI();
 }
@@ -174,8 +187,10 @@ function togglePause() {
   if (game.paused) {
     pointer.down = false;
     pointer.right = false;
+    resetTouchControls();
     show(pauseScreen);
   } else {
+    last = performance.now();
     hide(pauseScreen);
   }
 }
@@ -205,31 +220,37 @@ function showResult() {
 function updateHud() {
   if (!game) return;
   const s = game.getHudState();
-  $('alive-count').textContent = '存活 ' + s.alive;
-  $('zone-info').textContent = s.zone;
-  $('kill-count').textContent = '击杀 ' + s.kills;
-  $('hp-text').textContent = s.hp + (s.maxHp ? '/' + s.maxHp : '');
-  $('armor-text').textContent = String(s.armor);
+  setHudText('alive', 'alive-count', '存活 ' + s.alive);
+  setHudText('zone', 'zone-info', s.zone);
+  setHudText('kills', 'kill-count', '击杀 ' + s.kills);
+  setHudText('hpText', 'hp-text', s.hp + (s.maxHp ? '/' + s.maxHp : ''));
+  setHudText('armorText', 'armor-text', String(s.armor));
   const hpPct = s.maxHp ? Math.max(0, Math.min(100, (s.hp / s.maxHp) * 100)) : s.hp;
-  $('hp-bar').style.width = hpPct + '%';
-  $('armor-bar').style.width = Math.max(0, Math.min(100, s.armor)) + '%';
-  $('weapon-name').textContent = s.weaponName;
-  $('ammo-text').textContent = s.ammo;
-  $('medkit-text').textContent = '医疗包 ×' + s.medkits + ' (Q/E)';
+  setHudWidth('hpWidth', 'hp-bar', hpPct);
+  setHudWidth('armorWidth', 'armor-bar', Math.max(0, Math.min(100, s.armor)));
+  setHudText('weapon', 'weapon-name', s.weaponName);
+  setHudText('ammo', 'ammo-text', s.ammo);
+  setHudText('medkits', 'medkit-text', '医疗包 ×' + s.medkits + ' (Q/E)');
 
   const slots = $('weapon-slots');
-  slots.innerHTML = s.weapons.map(function (w) {
-    return (
-      '<div class="slot ' +
-      (w.active ? 'active' : '') +
-      (w.empty ? ' empty' : '') +
-      '"><div class="key">' +
-      w.key +
-      '</div><div>' +
-      w.name +
-      '</div></div>'
-    );
-  }).join('');
+  const slotsKey = s.weapons.map(function (w) {
+    return w.key + ':' + w.name + ':' + (w.active ? 1 : 0) + ':' + (w.empty ? 1 : 0);
+  }).join('|');
+  if (hudCache.slots !== slotsKey) {
+    hudCache.slots = slotsKey;
+    slots.innerHTML = s.weapons.map(function (w, i) {
+      return (
+        '<div class="slot ' +
+        (w.active ? 'active' : '') +
+        (w.empty ? ' empty' : '') +
+        '" data-slot="' + i + '"><div class="key">' +
+        w.key +
+        '</div><div>' +
+        w.name +
+        '</div></div>'
+      );
+    }).join('');
+  }
 
   const hint = $('pickup-hint');
   if (s.nearLoot) {
@@ -246,16 +267,51 @@ function updateHud() {
   if (s.inZoneDamage) warn.classList.remove('hidden');
   else warn.classList.add('hidden');
 
-  $('kill-feed').innerHTML = game.killFeed
-    .map(function (k) {
-      return '<div class="kill-item">' + k.text + '</div>';
-    })
-    .join('');
+  const feedKey = game.killFeed.map(function (k) { return k.text; }).join('|');
+  if (hudCache.feed !== feedKey) {
+    hudCache.feed = feedKey;
+    $('kill-feed').innerHTML = game.killFeed
+      .map(function (k) {
+        return '<div class="kill-item">' + k.text + '</div>';
+      })
+      .join('');
+  }
+
+  const scopeBtn = $('touch-scope');
+  if (scopeBtn) {
+    scopeBtn.classList.toggle('unavailable', !s.canScope);
+    if (!s.canScope && pointer.right) {
+      pointer.right = false;
+      scopeBtn.classList.remove('active');
+    }
+  }
+}
+
+function setHudText(cacheKey, id, value) {
+  if (hudCache[cacheKey] === value) return;
+  hudCache[cacheKey] = value;
+  const el = $(id);
+  if (el) el.textContent = value;
+}
+
+function setHudWidth(cacheKey, id, value) {
+  const rounded = Math.round(value * 10) / 10;
+  if (hudCache[cacheKey] === rounded) return;
+  hudCache[cacheKey] = rounded;
+  const el = $(id);
+  if (el) el.style.width = rounded + '%';
 }
 
 function loop(ts) {
+  if (!game || !playing) {
+    raf = 0;
+    return;
+  }
   raf = requestAnimationFrame(loop);
-  if (!game || !playing) return;
+  if (game.paused) {
+    last = ts;
+    return;
+  }
 
   const dt = Math.min(0.05, (ts - last) / 1000);
   last = ts;
@@ -264,15 +320,24 @@ function loop(ts) {
   game.update(dt);
 
   game.draw(ctx, { width: window.innerWidth, height: window.innerHeight });
-  const ms = minimap ? minimap.width : 160;
-  game.drawMinimap(mctx, ms);
-  updateHud();
+  if (ts >= nextMinimapAt) {
+    const ms = minimap ? minimap.width : 160;
+    game.drawMinimap(mctx, ms);
+    nextMinimapAt = ts + 100;
+  }
+  if (ts >= nextHudAt) {
+    updateHud();
+    nextHudAt = ts + 50;
+  }
   updateCrosshair();
 
   if (game.ended) {
     playing = false;
+    cancelAnimationFrame(raf);
+    raf = 0;
     pointer.down = false;
     pointer.right = false;
+    resetTouchControls();
     setTimeout(showResult, 700);
   }
 }
@@ -321,6 +386,7 @@ bind('btn-menu', 'click', backToMenu);
 bind('btn-resume', 'click', function () {
   if (game) {
     game.paused = false;
+    last = performance.now();
     hide(pauseScreen);
   }
 });
@@ -346,7 +412,10 @@ for (let i = 0; i < diffBtns.length; i++) {
   });
 }
 
-window.addEventListener('resize', resize);
+window.addEventListener('resize', function () {
+  syncInputModeClass();
+  resize();
+});
 
 window.addEventListener('mousemove', function (e) {
   pointer.x = e.clientX;
@@ -386,38 +455,178 @@ window.addEventListener('mouseup', function (e) {
 window.addEventListener('blur', function () {
   pointer.down = false;
   pointer.right = false;
+  resetTouchControls();
   if (game) {
     game.mouse.down = false;
     game.mouse.right = false;
   }
 });
 
-// 触控：点哪瞄哪，双指不处理
-window.addEventListener('touchstart', function (e) {
-  if (!playing || !game) return;
-  if (e.touches.length === 1) {
-    const t = e.touches[0];
-    pointer.x = t.clientX;
-    pointer.y = t.clientY;
-    pointer.down = true;
-    syncMouseToGame();
-  }
-}, { passive: true });
+function isTouchMode() {
+  const coarse = !!(window.matchMedia &&
+    window.matchMedia('(hover: none) and (pointer: coarse)').matches);
+  const compactTouch = (navigator.maxTouchPoints || 0) > 0 && window.innerWidth <= 900;
+  return coarse || compactTouch;
+}
 
-window.addEventListener('touchmove', function (e) {
-  if (!playing || !game) return;
-  if (e.touches.length === 1) {
-    const t = e.touches[0];
-    pointer.x = t.clientX;
-    pointer.y = t.clientY;
-    syncMouseToGame();
-    updateCrosshair();
-  }
-}, { passive: true });
+function syncInputModeClass() {
+  document.documentElement.classList.toggle('touch-ui', isTouchMode());
+}
 
-window.addEventListener('touchend', function () {
+function resetTouchControls() {
+  pointer.down = false;
+  if (game) {
+    game.mouse.down = false;
+    game.mobileMove.x = 0;
+    game.mobileMove.y = 0;
+    game.mobileMove.sprint = false;
+  }
+  const knobs = document.querySelectorAll('.stick-knob');
+  for (let i = 0; i < knobs.length; i++) knobs[i].style.transform = 'translate(0, 0)';
+  const scopeBtn = $('touch-scope');
+  if (scopeBtn) scopeBtn.classList.remove('active');
+}
+
+function getStickVector(el, e) {
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const radius = Math.max(24, rect.width * 0.31);
+  let x = (e.clientX - cx) / radius;
+  let y = (e.clientY - cy) / radius;
+  const len = Math.hypot(x, y);
+  if (len > 1) {
+    x /= len;
+    y /= len;
+  }
+  const knob = el.querySelector('.stick-knob');
+  if (knob) knob.style.transform = 'translate(' + (x * radius) + 'px,' + (y * radius) + 'px)';
+  return { x: x, y: y, strength: Math.min(1, len) };
+}
+
+function bindTouchStick(id, onChange, onEnd) {
+  const el = $(id);
+  if (!el) return;
+  let activePointer = null;
+
+  function move(e) {
+    if (e.pointerId !== activePointer) return;
+    e.preventDefault();
+    e.stopPropagation();
+    onChange(getStickVector(el, e), e);
+  }
+
+  function end(e) {
+    if (e.pointerId !== activePointer) return;
+    e.preventDefault();
+    e.stopPropagation();
+    activePointer = null;
+    const knob = el.querySelector('.stick-knob');
+    if (knob) knob.style.transform = 'translate(0, 0)';
+    onEnd(e);
+  }
+
+  el.addEventListener('pointerdown', function (e) {
+    if (!playing || !game || game.paused || game.ended) return;
+    e.preventDefault();
+    e.stopPropagation();
+    activePointer = e.pointerId;
+    if (el.setPointerCapture) el.setPointerCapture(e.pointerId);
+    if (typeof SFX !== 'undefined') SFX.unlock();
+    onChange(getStickVector(el, e), e);
+  });
+  el.addEventListener('pointermove', move);
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+  el.addEventListener('lostpointercapture', function (e) {
+    if (e.pointerId === activePointer) end(e);
+  });
+}
+
+bindTouchStick('move-stick', function (v) {
+  if (!game) return;
+  game.mobileMove.x = v.x;
+  game.mobileMove.y = v.y;
+  game.mobileMove.sprint = v.strength > 0.88;
+}, function () {
+  if (!game) return;
+  game.mobileMove.x = 0;
+  game.mobileMove.y = 0;
+  game.mobileMove.sprint = false;
+});
+
+bindTouchStick('aim-stick', function (v) {
+  if (!game) return;
+  if (v.strength > 0.12) {
+    const reach = Math.min(390, Math.max(190, Math.min(window.innerWidth, window.innerHeight) * 0.48));
+    pointer.x = window.innerWidth / 2 + v.x * reach;
+    pointer.y = window.innerHeight / 2 + v.y * reach;
+  }
+  pointer.down = true;
+  syncMouseToGame();
+  updateCrosshair();
+}, function () {
   pointer.down = false;
   if (game) game.mouse.down = false;
+});
+
+function bindTouchAction(id, action) {
+  const el = $(id);
+  if (!el) return;
+  el.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!playing || !game || game.paused || game.ended) return;
+    if (typeof SFX !== 'undefined') SFX.unlock();
+    action(el);
+  });
+}
+
+bindTouchAction('touch-scope', function (el) {
+  const w = game && game.player ? getActiveWeapon(game.player) : null;
+  if (!canWeaponScope(w)) {
+    toast('当前武器不支持开镜');
+    return;
+  }
+  pointer.right = !pointer.right;
+  el.classList.toggle('active', pointer.right);
+  syncMouseToGame();
+});
+bindTouchAction('touch-reload', function () {
+  game.onKeyDown('KeyR');
+  game.onKeyUp('KeyR');
+});
+bindTouchAction('touch-medkit', function () {
+  game.onKeyDown('KeyQ');
+  game.onKeyUp('KeyQ');
+});
+bindTouchAction('touch-pickup', function () {
+  game.onKeyDown('KeyF');
+  game.onKeyUp('KeyF');
+});
+
+const weaponSlots = $('weapon-slots');
+if (weaponSlots) {
+  weaponSlots.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+  weaponSlots.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+  weaponSlots.addEventListener('click', function (e) {
+    const slot = e.target.closest ? e.target.closest('[data-slot]') : null;
+    if (!slot || !game || game.paused || game.ended) return;
+    const index = Number(slot.getAttribute('data-slot'));
+    if (!Number.isFinite(index)) return;
+    game.onKeyDown('Digit' + (index + 1));
+    game.onKeyUp('Digit' + (index + 1));
+    pointer.right = false;
+    const scopeBtn = $('touch-scope');
+    if (scopeBtn) scopeBtn.classList.remove('active');
+    updateHud();
+  });
+}
+
+document.addEventListener('visibilitychange', function () {
+  if (document.hidden && playing && game && !game.paused && !game.ended) {
+    togglePause();
+  }
 });
 
 window.addEventListener('keydown', function (e) {
@@ -457,6 +666,7 @@ window.addEventListener('dragstart', function (e) {
 });
 
 // 初始化
+syncInputModeClass();
 resize();
 updateCrosshair();
 

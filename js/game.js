@@ -37,7 +37,10 @@ class Game {
     this.shake = 0;
     this.ambientT = 0;
     this.hitFlash = 0;
+    this.hitMarker = 0;
+    this.killMarker = 0;
     this.zoneArrow = { active: false, ang: 0, dist: 0 };
+    this.mobileMove = { x: 0, y: 0, sprint: false };
     this.viewZoom = 1; // 当前镜头倍率（平滑插值）
     this.targetZoom = 1;
     this.wasScoping = false;
@@ -70,6 +73,8 @@ class Game {
     this.now = this.time * 1000;
     this.ambientT += dt;
     if (this.hitFlash > 0) this.hitFlash -= dt;
+    if (this.hitMarker > 0) this.hitMarker -= dt;
+    if (this.killMarker > 0) this.killMarker -= dt;
 
     const p = this.player;
     if (p.invuln > 0) p.invuln -= dt;
@@ -97,17 +102,30 @@ class Game {
 
       let dx = 0;
       let dy = 0;
+      let keyboardMove = false;
       if (this.keys.has('KeyW') || this.keys.has('ArrowUp')) dy -= 1;
       if (this.keys.has('KeyS') || this.keys.has('ArrowDown')) dy += 1;
       if (this.keys.has('KeyA') || this.keys.has('ArrowLeft')) dx -= 1;
       if (this.keys.has('KeyD') || this.keys.has('ArrowRight')) dx += 1;
+      keyboardMove = dx !== 0 || dy !== 0;
+      if (this.mobileMove) {
+        dx += this.mobileMove.x || 0;
+        dy += this.mobileMove.y || 0;
+      }
+      const moveStrength = keyboardMove
+        ? 1
+        : clamp(Math.hypot(
+          this.mobileMove ? this.mobileMove.x || 0 : 0,
+          this.mobileMove ? this.mobileMove.y || 0 : 0
+        ), 0, 1);
       // 开镜时移速下降，且不能冲刺
-      let sprint = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight');
+      let sprint = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight') ||
+        !!(this.mobileMove && this.mobileMove.sprint);
       if (p.scoping) sprint = false;
       const speedMul = p.scoping ? (wpn.scopeMoveMul || 0.55) : 1;
       const oldSpeed = p.speed;
       p.speed = oldSpeed * speedMul;
-      const moved = moveEntity(p, dx, dy, dt, this.buildings, sprint);
+      const moved = moveEntity(p, dx, dy, dt, this.buildings, sprint, moveStrength);
       p.speed = oldSpeed;
 
       if (moved) {
@@ -185,7 +203,11 @@ class Game {
           // 狙击后坐力更大
           const kick = getActiveWeapon(p).id === 'sniper' ? 5 : 1.8;
           this.shake = Math.min(10, this.shake + kick);
-          if (result.killed) this.addKillFeed(p.name, result.hit.name);
+          this.hitMarker = 0.14;
+          if (result.killed) {
+            this.killMarker = 0.3;
+            this.addKillFeed(p.name, result.hit.name);
+          }
         }
       }
 
@@ -997,6 +1019,8 @@ class Game {
       rank: this.rank,
       result: this.result,
       hitFlash: this.hitFlash,
+      hitMarker: this.hitMarker,
+      killMarker: this.killMarker,
     };
   }
 }
