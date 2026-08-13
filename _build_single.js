@@ -7,7 +7,7 @@ function stripBom(s) {
 }
 
 const css = stripBom(fs.readFileSync(path.join(dir, 'css/style.css'), 'utf8'));
-const jsFiles = ['config.js', 'audio.js', 'world.js', 'zone.js', 'entities.js', 'game.js', 'main.js']
+const jsFiles = ['config.js', 'audio.js', 'world.js', 'zone.js', 'entities.js', 'game.js', 'spawn_spacing.js', 'main.js']
   .map((f) => stripBom(fs.readFileSync(path.join(dir, 'js', f), 'utf8')))
   .join('\n\n');
 
@@ -188,7 +188,7 @@ fs.writeFileSync(
   'utf8'
 );
 
-for (const f of ['config.js', 'audio.js', 'world.js', 'zone.js', 'entities.js', 'game.js', 'main.js']) {
+for (const f of ['config.js', 'audio.js', 'world.js', 'zone.js', 'entities.js', 'game.js', 'spawn_spacing.js', 'main.js']) {
   let t = stripBom(fs.readFileSync(path.join(dir, 'js', f), 'utf8'));
   t = t
     .replace(/result\?\.killed/g, 'result && result.killed')
