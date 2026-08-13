@@ -23,10 +23,13 @@ const DIFFICULTY_PRESETS = {
     playerStartArmor: 25,
     playerStartMedkits: 1,
     playerStartAmmo: 50,
-    playerInvuln: 5.0,
-    spawnMinPlayerDist: 560,
-    spawnMinBotDist: 280,
-    botPlayerGrace: 6.5,
+    playerInvuln: 6.0, // baseline 5.0
+    spawnMinPlayerDist: 1020, // baseline 560; beyond sniper 900, map 2000
+    spawnMinBotDist: 400, // baseline 280
+    botPlayerGrace: 9.5, // baseline 6.5
+    botPlayerEngageCap: 430, // bots only shoot/hunt player at on-screen-ish range
+    botOpenWindow: 14, // opening loot/wander; reduced bot-bot fights
+    botOpenFightRange: 165,
     aimAssist: 0.1,
     zoneScale: 1.0, // 毒圈节奏倍率（越小越紧）
     label: '休闲',
@@ -97,6 +100,9 @@ function applyDifficulty(level) {
   BALANCE.spawnMinPlayerDist = p.spawnMinPlayerDist != null ? p.spawnMinPlayerDist : 240;
   BALANCE.spawnMinBotDist = p.spawnMinBotDist || 0;
   BALANCE.botPlayerGrace = p.botPlayerGrace || 0;
+  BALANCE.botPlayerEngageCap = p.botPlayerEngageCap || 0;
+  BALANCE.botOpenWindow = p.botOpenWindow || 0;
+  BALANCE.botOpenFightRange = p.botOpenFightRange || 0;
   BALANCE.aimAssist = p.aimAssist;
   BALANCE.scopeAimAssist = Math.max(0.08, p.aimAssist + 0.08);
   BALANCE.zoneScale = p.zoneScale;
@@ -177,12 +183,16 @@ const BALANCE = {
   spawnMinPlayerDist: 240,
   spawnMinBotDist: 0,
   botPlayerGrace: 0,
+  botPlayerEngageCap: 0,
+  botOpenWindow: 0,
+  botOpenFightRange: 0,
   autoPickupR: 28,
   aimAssist: 0.06,
   lookAhead: 0.16,
   scopeAimAssist: 0.14,
   zoneScale: 0.85,
 };
+
 
 function rosterLabel(botCount) {
   const n = botCount != null ? botCount : WORLD.botCount;
