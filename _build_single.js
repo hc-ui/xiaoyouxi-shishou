@@ -63,7 +63,7 @@ ${css}
           <button type="button" class="diff-btn active" data-diff="normal">标准</button>
           <button type="button" class="diff-btn" data-diff="hard">困难</button>
         </div>
-        <p class="menu-tips" id="menu-diff-tip">当前难度：标准 · 16 人机 · 会主动追杀</p>
+        <p class="menu-tips" id="menu-diff-tip">当前难度：标准 · 16 人机（共17人） · 会主动追杀</p>
         <button id="btn-start" class="btn primary" type="button">开始匹配</button>
         <div class="menu-actions">
           <button id="btn-share" class="btn ghost" type="button">复制链接分享</button>
@@ -98,7 +98,7 @@ ${css}
       <canvas id="game"></canvas>
       <canvas id="minimap" width="160" height="160"></canvas>
       <div id="top-bar">
-        <div class="pill" id="alive-count">存活 9</div>
+        <div class="pill" id="alive-count">存活 17/17</div>
         <div class="pill" id="zone-info">安全区 稳定</div>
         <div class="pill" id="kill-count">击杀 0</div>
       </div>
@@ -175,14 +175,12 @@ ${js}
 </html>
 `;
 
-// 写根目录 index（本地双击）
 fs.writeFileSync(path.join(dir, 'index.html'), html, { encoding: 'utf8' });
 
-// 写 dist 部署目录
 const dist = path.join(dir, 'dist');
 if (!fs.existsSync(dist)) fs.mkdirSync(dist);
 fs.writeFileSync(path.join(dist, 'index.html'), html, { encoding: 'utf8' });
-fs.writeFileSync(path.join(dist, '404.html'), html, { encoding: 'utf8' }); // GitHub Pages SPA 友好
+fs.writeFileSync(path.join(dist, '404.html'), html, { encoding: 'utf8' });
 fs.writeFileSync(path.join(dist, 'CNAME.example'), '# 若有自定义域名，改名为 CNAME 并填入域名\n');
 fs.writeFileSync(
   path.join(dist, 'README.md'),
@@ -190,7 +188,6 @@ fs.writeFileSync(
   'utf8'
 );
 
-// 同步干净模块（开发用）
 for (const f of ['config.js', 'audio.js', 'world.js', 'zone.js', 'entities.js', 'game.js', 'main.js']) {
   let t = stripBom(fs.readFileSync(path.join(dir, 'js', f), 'utf8'));
   t = t
