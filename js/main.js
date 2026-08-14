@@ -51,7 +51,6 @@ function resize() {
   canvas.style.width = window.innerWidth + 'px';
   canvas.style.height = window.innerHeight + 'px';
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  // 小地图分辨率
   if (minimap) {
     const s = window.innerWidth < 640 ? 110 : 160;
     minimap.width = s;
@@ -122,7 +121,7 @@ function setDifficulty(level) {
   }
   const label = (DIFFICULTY_PRESETS[level] || {}).label || level;
   const tip = $('menu-diff-tip');
-  if (tip) tip.textContent = '当前难度：' + label + ' · ' + WORLD.botCount + ' 人机';
+  if (tip) tip.textContent = '当前难度：' + label + ' · ' + rosterLabel(WORLD.botCount);
 }
 
 function startGame() {
@@ -210,7 +209,6 @@ function showResult() {
   $('stat-time').textContent = s.time;
   show(resultScreen);
 
-  // 记录成绩
   const st = loadStore();
   const best = Math.max(st.bestKills || 0, s.kills || 0);
   const wins = (st.wins || 0) + (win ? 1 : 0);
@@ -220,7 +218,7 @@ function showResult() {
 function updateHud() {
   if (!game) return;
   const s = game.getHudState();
-  setHudText('alive', 'alive-count', '存活 ' + s.alive);
+  setHudText('alive', 'alive-count', '存活 ' + s.alive + '/' + (WORLD.botCount + 1));
   setHudText('zone', 'zone-info', s.zone);
   setHudText('kills', 'kill-count', '击杀 ' + s.kills);
   setHudText('hpText', 'hp-text', s.hp + (s.maxHp ? '/' + s.maxHp : ''));
@@ -360,7 +358,6 @@ function copyShareLink() {
   } else {
     prompt('复制此链接分享：', url);
   }
-  // 可选原生分享
   if (navigator.share) {
     navigator.share({ title: '大逃杀轻量版', text: '网页吃鸡，点开即玩', url: url }).catch(function () {});
   }
@@ -379,7 +376,6 @@ function toggleFullscreen() {
   }
 }
 
-// 绑定
 bind('btn-start', 'click', startGame);
 bind('btn-again', 'click', startGame);
 bind('btn-menu', 'click', backToMenu);
@@ -404,7 +400,6 @@ if (muteBtn) {
   });
 }
 
-// 难度按钮
 var diffBtns = document.querySelectorAll('.diff-btn');
 for (let i = 0; i < diffBtns.length; i++) {
   diffBtns[i].addEventListener('click', function () {
@@ -665,14 +660,12 @@ window.addEventListener('dragstart', function (e) {
   if (playing) e.preventDefault();
 });
 
-// 初始化
 syncInputModeClass();
 resize();
 updateCrosshair();
 
 const stored = loadStore();
 if (stored.muted && typeof SFX !== 'undefined') {
-  // SFX 默认未静音；切换一次
   if (!SFX.isMuted()) SFX.toggleMute();
   if (muteBtn) muteBtn.textContent = '音效：关';
 }

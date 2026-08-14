@@ -38,22 +38,35 @@ function createPlayer(x, y) {
   };
 }
 
-function createBot(buildings, playerPos) {
+function isPlayerProtected(entity, game) {
+  if (!entity || !entity.isPlayer) return false;
+  if (entity.invuln > 0) return true;
+  const grace = BALANCE.botPlayerGrace || 0;
+  return !!(grace > 0 && game && game.time < grace);
+}
+
+function createBot(buildings, playerPos, others) {
   let x;
   let y;
   let tries = 0;
-  // 安全距离缩短，落地更容易遭遇
-  const safeDist = GAME_DIFFICULTY === 'hard' ? 180 : GAME_DIFFICULTY === 'normal' ? 220 : 260;
+  const safeDist = BALANCE.spawnMinPlayerDist != null
+    ? BALANCE.spawnMinPlayerDist
+    : (GAME_DIFFICULTY === 'hard' ? 180 : GAME_DIFFICULTY === 'normal' ? 220 : 560);
+  const botDist = BALANCE.spawnMinBotDist || 0;
+  const othersList = others || [];
   do {
     x = randRange(80, WORLD.size - 80);
     y = randRange(80, WORLD.size - 80);
     tries++;
   } while (
-    tries < 55 &&
+    tries < 90 &&
     (buildings.some(function (b) {
       return x > b.x - 20 && x < b.x + b.w + 20 && y > b.y - 20 && y < b.y + b.h + 20;
     }) ||
-      (playerPos && dist({ x: x, y: y }, playerPos) < safeDist))
+      (playerPos && dist({ x: x, y: y }, playerPos) < safeDist) ||
+      (botDist > 0 && othersList.some(function (o) {
+        return dist({ x: x, y: y }, o) < botDist;
+      })))
   );
 
   const name = BOT_NAMES[nameIndex % BOT_NAMES.length];
@@ -158,7 +171,6 @@ function equipWeapon(entity, weaponId) {
     return i > 0 && !wp;
   });
   if (slot === -1) {
-    // 已有同枪则补弹，否则替换当前槽
     const same = entity.weapons.findIndex(function (wp) {
       return wp && wp.id === weaponId;
     });
@@ -189,7 +201,6 @@ function applyDamage(entity, dmg, attacker) {
   }
   entity.hp -= remain;
   entity.lastHurt = 0.35;
-  // 仅交火时播受伤音，避免毒圈每帧刷屏
   if (entity.isPlayer && remain > 0 && attacker && typeof SFX !== 'undefined') SFX.hurt();
   if (attacker && attacker.isPlayer && remain > 0 && typeof SFX !== 'undefined') SFX.hit();
   if (entity.hp <= 0) {
@@ -256,7 +267,6 @@ function fireWeapon(entity, now, aimAngle, buildings, others, bullets, sparks) {
     else SFX.shoot(!w.isMelee && w.id === 'shotgun');
   }
 
-  // 枪口火花
   const mx = entity.x + Math.cos(aimAngle) * (entity.r + 18);
   const my = entity.y + Math.sin(aimAngle) * (entity.r + 18);
   sparks.push({
@@ -269,13 +279,11 @@ function fireWeapon(entity, now, aimAngle, buildings, others, bullets, sparks) {
   const pellets = w.pellets || 1;
   let lastResult = null;
 
-  // 散布：狙击开镜极准，腰射很散；开镜时再减一点
   let baseSpread = w.spread;
   if (scoped && w.scopeSpread != null) baseSpread = w.scopeSpread;
   else if (canWeaponScope(w) && !scoped) baseSpread = w.spread * 1.15;
 
   for (let i = 0; i < pellets; i++) {
-    // 人机散布减小，更会打中
     let extraSpread = entity.isPlayer ? 0 : 0.04;
     if (entity.isPlayer && scoped) extraSpread = 0;
     const spread = (Math.random() - 0.5) * (baseSpread + extraSpread) * 2;
@@ -353,7 +361,6 @@ function fireWeapon(entity, now, aimAngle, buildings, others, bullets, sparks) {
     }
   }
 
-  // 打空自动换弹
   if (!w.isMelee && entity.mag[w.id] <= 0 && entity.reserveAmmo > 0) {
     tryReload(entity, now);
   }
@@ -385,19 +392,29 @@ function updateBot(bot, dt, now, game) {
   for (let i = 0; i < enemies.length; i++) {
     const e = enemies[i];
     const d = dist(bot, e);
-    if (d < nearestDist) {
-      nearestDist = d;
-      nearestEnemy = e;
-    }
     if (e.isPlayer) {
       playerEnemy = e;
       playerDist = d;
     }
+    if (isPlayerProtected(e, game)) continue;
+    if (d < nearestDist) {
+      nearestDist = d;
+      nearestEnemy = e;
+    }
   }
 
+  if (bot.target && isPlayerProtected(bot.target, game)) {
+    bot.target = null;
+    if (bot.state === 'hunt' || bot.state === 'fight') {
+      bot.state = 'loot';
+      bot.stateTimer = 1.2;
+    }
+  }
+
+  const playerHuntable = playerEnemy && !isPlayerProtected(playerEnemy, game);
   const huntMul = bot.aggression || 0.7;
   if (
-    playerEnemy &&
+    playerHuntable &&
     playerDist < 520 * huntMul + (BALANCE.botEngageBonus || 80) &&
     bot.state !== 'zone' &&
     Math.random() < (BALANCE.botHuntChance || 0.5) * 0.08
@@ -438,7 +455,9 @@ function updateBot(bot, dt, now, game) {
   }
 
   if (bot.state === 'hunt') {
-    const prey = (bot.target && bot.target.alive) ? bot.target : (playerEnemy || nearestEnemy);
+    const prey = (bot.target && bot.target.alive && !isPlayerProtected(bot.target, game))
+      ? bot.target
+      : (playerHuntable ? playerEnemy : nearestEnemy);
     if (!prey) {
       bot.state = 'loot';
       bot.stateTimer = 1;
@@ -514,7 +533,7 @@ function updateBot(bot, dt, now, game) {
         bot.target = best;
         bot.state = 'loot';
         bot.stateTimer = 4;
-      } else if (playerEnemy && Math.random() < (BALANCE.botHuntChance || 0.5)) {
+      } else if (playerHuntable && Math.random() < (BALANCE.botHuntChance || 0.5)) {
         bot.state = 'hunt';
         bot.target = playerEnemy;
         bot.stateTimer = 4;
@@ -553,6 +572,7 @@ function updateBot(bot, dt, now, game) {
 }
 
 function maybeBotShoot(bot, now, game) {
+  if (bot.target && isPlayerProtected(bot.target, game)) return;
   const w = getActiveWeapon(bot);
   ensureMag(bot, w);
   if (!w.isMelee && bot.mag[w.id] <= 0) {
@@ -587,7 +607,6 @@ function pickupLoot(entity, item, silent) {
   return true;
 }
 
-/** 走过自动捡弹药/医疗/护甲（武器仍需 F 或靠近手动） */
 function autoPickupNear(entity, lootList) {
   if (!entity.alive) return;
   for (let i = 0; i < lootList.length; i++) {

@@ -1,4 +1,4 @@
-/** 游戏常量与武器 — 加强难度版 */
+/** 游戏常量与武器 — 休闲有开局保护，标准/困难保持强度 */
 
 const WORLD = {
   size: 2000,
@@ -14,16 +14,22 @@ const DIFFICULTY_PRESETS = {
     botDamageMul: 0.72,
     botAccuracyMin: 0.38,
     botAccuracyMax: 0.58,
-    botShootChance: 0.62,
-    botEngageBonus: 70,
+    botShootChance: 0.42,
+    botEngageBonus: 28,
     botHp: 90,
     botArmedChance: 0.55,
-    botHuntChance: 0.35,
+    botHuntChance: 0.14,
     playerHp: 110,
     playerStartArmor: 25,
     playerStartMedkits: 1,
     playerStartAmmo: 50,
-    playerInvuln: 1.0,
+    playerInvuln: 6.0, // baseline 5.0
+    spawnMinPlayerDist: 1020, // baseline 560; beyond sniper 900, map 2000
+    spawnMinBotDist: 400, // baseline 280
+    botPlayerGrace: 9.5, // baseline 6.5
+    botPlayerEngageCap: 430, // bots only shoot/hunt player at on-screen-ish range
+    botOpenWindow: 14, // opening loot/wander; reduced bot-bot fights
+    botOpenFightRange: 165,
     aimAssist: 0.1,
     zoneScale: 1.0, // 毒圈节奏倍率（越小越紧）
     label: '休闲',
@@ -43,6 +49,9 @@ const DIFFICULTY_PRESETS = {
     playerStartMedkits: 0,
     playerStartAmmo: 24,
     playerInvuln: 0.6,
+    spawnMinPlayerDist: 240,
+    spawnMinBotDist: 0,
+    botPlayerGrace: 0,
     aimAssist: 0.06,
     zoneScale: 0.85,
     label: '标准',
@@ -62,6 +71,9 @@ const DIFFICULTY_PRESETS = {
     playerStartMedkits: 0,
     playerStartAmmo: 12,
     playerInvuln: 0.3,
+    spawnMinPlayerDist: 180,
+    spawnMinBotDist: 0,
+    botPlayerGrace: 0,
     aimAssist: 0.03,
     zoneScale: 0.7,
     label: '困难',
@@ -85,6 +97,12 @@ function applyDifficulty(level) {
   BALANCE.playerStartMedkits = p.playerStartMedkits;
   BALANCE.playerStartAmmo = p.playerStartAmmo;
   BALANCE.playerInvuln = p.playerInvuln;
+  BALANCE.spawnMinPlayerDist = p.spawnMinPlayerDist != null ? p.spawnMinPlayerDist : 240;
+  BALANCE.spawnMinBotDist = p.spawnMinBotDist || 0;
+  BALANCE.botPlayerGrace = p.botPlayerGrace || 0;
+  BALANCE.botPlayerEngageCap = p.botPlayerEngageCap || 0;
+  BALANCE.botOpenWindow = p.botOpenWindow || 0;
+  BALANCE.botOpenFightRange = p.botOpenFightRange || 0;
   BALANCE.aimAssist = p.aimAssist;
   BALANCE.scopeAimAssist = Math.max(0.08, p.aimAssist + 0.08);
   BALANCE.zoneScale = p.zoneScale;
@@ -162,12 +180,24 @@ const BALANCE = {
   playerStartAmmo: 24,
   playerHp: 100,
   playerInvuln: 0.6,
+  spawnMinPlayerDist: 240,
+  spawnMinBotDist: 0,
+  botPlayerGrace: 0,
+  botPlayerEngageCap: 0,
+  botOpenWindow: 0,
+  botOpenFightRange: 0,
   autoPickupR: 28,
   aimAssist: 0.06,
   lookAhead: 0.16,
   scopeAimAssist: 0.14,
   zoneScale: 0.85,
 };
+
+
+function rosterLabel(botCount) {
+  const n = botCount != null ? botCount : WORLD.botCount;
+  return n + ' 人机（共' + (n + 1) + '人）';
+}
 
 function pickLootType() {
   const total = LOOT_TYPES.reduce(function (s, t) { return s + t.weight; }, 0);
