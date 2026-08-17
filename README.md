@@ -1,12 +1,10 @@
-# 小游戏试手：大逃杀 · 轻量版 (Battle Royale Lite)
+# 小游戏试手：大逃杀 · 轻量版
 
-浏览器即玩的俯视角吃鸡：缩圈、搜打装、人机、**狙击开镜**。
+浏览器俯视角吃鸡：缩圈、搜打装、人机、狙击开镜。点开即玩，不用装。
 
-## 在线游玩
+**[在线玩 →](https://hc-ui.github.io/xiaoyouxi-shishou/)**
 
-**https://hc-ui.github.io/xiaoyouxi-shishou/**
-
-把链接发给朋友即可，无需安装。
+英文仓名同一款游戏：[battle-royale-lite](https://github.com/hc-ui/battle-royale-lite)。
 
 ## 本地打开
 
