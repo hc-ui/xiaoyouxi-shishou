@@ -14,6 +14,9 @@ class Game {
     this.loot = world.loot;
     this.zone = new Zone();
     this.player = createPlayer(WORLD.size / 2 + randOffset(), WORLD.size / 2 + randOffset());
+    if (typeof resolveCircleBuilding === 'function') {
+      resolveCircleBuilding(this.player, this.buildings);
+    }
     this.bots = [];
     const ppos = { x: this.player.x, y: this.player.y };
     for (let i = 0; i < WORLD.botCount; i++) {
@@ -220,6 +223,14 @@ class Game {
 
     for (let i = 0; i < this.bots.length; i++) {
       updateBot(this.bots[i], dt, this.now, this);
+    }
+
+    if (typeof resolveLivingOverlaps === 'function') {
+      const living = this.aliveEntities();
+      resolveLivingOverlaps(living);
+      for (let i = 0; i < living.length; i++) {
+        resolveCircleBuilding(living[i], this.buildings);
+      }
     }
 
     this.zone.update(dt);
@@ -462,10 +473,13 @@ class Game {
       this.drawZoneArrow(ctx, w, h);
     }
 
-    // 开镜提示
+    // 开镜提示（触屏已有右侧按钮，窄屏底栏会挡住这段字）
     if (this.player.alive) {
+      const compactHud = typeof window !== 'undefined' && window.innerWidth < 640;
+      const touchUi = typeof document !== 'undefined' &&
+        document.documentElement.classList.contains('touch-ui');
       const wpn = getActiveWeapon(this.player);
-      if (canWeaponScope(wpn) && !this.player.scoping) {
+      if (canWeaponScope(wpn) && !this.player.scoping && !touchUi && !compactHud) {
         ctx.fillStyle = 'rgba(192,132,252,0.75)';
         ctx.font = '12px Segoe UI, Microsoft YaHei, sans-serif';
         ctx.textAlign = 'center';
