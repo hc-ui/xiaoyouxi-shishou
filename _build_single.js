@@ -103,6 +103,14 @@ ${css}
       </div>
     </div>
 
+    <div id="match-overlay" class="screen hidden" aria-live="polite">
+      <div class="menu-card small">
+        <p class="badge">MATCHMAKING</p>
+        <h2 id="match-overlay-text">正在匹配…</h2>
+        <p class="menu-tips" id="match-overlay-tip">准备部署</p>
+      </div>
+    </div>
+
     <button id="btn-mute" type="button">音效：开</button>
 
     <div id="hud" class="hidden">
