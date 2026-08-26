@@ -214,7 +214,7 @@ function createLoot(buildings) {
 function weaponLabel(id) {
   const map = {
     pistol: '手枪', smg: '冲锋枪', rifle: '步枪',
-    shotgun: '霜弹枪', sniper: '狙击枪',
+    shotgun: '霰弹枪', sniper: '狙击枪',
   };
   return map[id] || '武器';
 }
