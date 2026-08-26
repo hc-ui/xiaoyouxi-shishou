@@ -1,0 +1,9 @@
+{
+  "name": "xiaoyouxi-shishou",
+  "private": true,
+  "description": "Browser top-down battle royale. Open index.html to play.",
+  "scripts": {
+    "build": "node _build_single.js",
+    "test": "node --test tests/*.js"
+  }
+}
