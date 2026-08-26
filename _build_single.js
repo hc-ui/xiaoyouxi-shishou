@@ -80,7 +80,7 @@ ${css}
           <button id="btn-share" class="btn ghost" type="button">复制链接分享</button>
           <button id="btn-fullscreen" class="btn ghost" type="button">全屏</button>
         </div>
-        <p class="best-score" id="best-score">历史最佳出勤 0 · 吃鸡 0 次</p>
+        <p class="best-score" id="best-score">历史最佳击杀 0 · 吃鸡 0 次</p>
         <div class="controls-hint desktop-only">
           <h3>操作说明</h3>
           <ul>
