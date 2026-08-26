@@ -17,7 +17,7 @@ class Game {
     this.bots = [];
     const ppos = { x: this.player.x, y: this.player.y };
     for (let i = 0; i < WORLD.botCount; i++) {
-      this.bots.push(createBot(this.buildings, ppos));
+      this.bots.push(createBot(this.buildings, ppos, this.bots));
     }
     this.bullets = [];
     this.sparks = [];
