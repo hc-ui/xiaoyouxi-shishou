@@ -17,6 +17,7 @@ let playing = false;
 let selectedDiff = 'normal';
 let nextHudAt = 0;
 let nextMinimapAt = 0;
+let matchLock = false;
 const hudCache = {};
 
 const STORAGE_KEY = 'br_lite_v1';
@@ -124,14 +125,42 @@ function setDifficulty(level) {
   if (tip) tip.textContent = '当前难度：' + label + ' · ' + rosterLabel(WORLD.botCount);
 }
 
+function requestMatch() {
+  if (matchLock) return;
+  if (playing && game && !game.ended) return;
+  matchLock = true;
+  applyDifficulty(selectedDiff);
+  const overlay = $('match-overlay');
+  const text = $('match-overlay-text');
+  const tip = $('match-overlay-tip');
+  const preset = DIFFICULTY_PRESETS[selectedDiff] || {};
+  if (text) text.textContent = '正在匹配…';
+  if (tip) tip.textContent = (preset.label || selectedDiff) + ' · ' + rosterLabel(WORLD.botCount);
+  hide(menu);
+  hide(resultScreen);
+  hide(pauseScreen);
+  if (overlay) overlay.classList.remove('hidden');
+  const startBtn = $('btn-start');
+  const againBtn = $('btn-again');
+  if (startBtn) startBtn.blur();
+  if (againBtn) againBtn.blur();
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      startGame();
+    });
+  });
+}
+
 function startGame() {
   try {
     if (typeof SFX !== 'undefined') SFX.unlock();
     applyDifficulty(selectedDiff);
     game = new Game();
+    if (typeof window !== 'undefined') window.game = game;
     hide(menu);
     hide(resultScreen);
     hide(pauseScreen);
+    hide($('match-overlay'));
     show(hud);
     if (hud) hud.classList.add('playing');
     playing = true;
@@ -143,11 +172,13 @@ function startGame() {
     nextMinimapAt = 0;
     for (const k in hudCache) delete hudCache[k];
     resetTouchControls();
+    updateHud();
     updateCrosshair();
     syncMouseToGame();
     try { window.focus(); } catch (e) {}
     last = performance.now();
     cancelAnimationFrame(raf);
+    matchLock = false;
     loop(last);
 
     var hint = $('move-hint');
@@ -161,22 +192,31 @@ function startGame() {
     }
   } catch (err) {
     console.error(err);
+    playing = false;
+    game = null;
+    matchLock = false;
+    hide(hud);
+    hide($('match-overlay'));
+    show(menu);
     alert('启动失败: ' + (err && err.message ? err.message : err));
   }
 }
 
 function backToMenu() {
   playing = false;
+  matchLock = false;
   cancelAnimationFrame(raf);
   hide(hud);
   hide(pauseScreen);
   hide(resultScreen);
+  hide($('match-overlay'));
   show(menu);
   if (hud) hud.classList.remove('playing');
   pointer.down = false;
   pointer.right = false;
   resetTouchControls();
   game = null;
+  if (typeof window !== 'undefined') window.game = null;
   refreshBestScoreUI();
 }
 
@@ -376,8 +416,8 @@ function toggleFullscreen() {
   }
 }
 
-bind('btn-start', 'click', startGame);
-bind('btn-again', 'click', startGame);
+bind('btn-start', 'click', requestMatch);
+bind('btn-again', 'click', requestMatch);
 bind('btn-menu', 'click', backToMenu);
 bind('btn-resume', 'click', function () {
   if (game) {
@@ -436,14 +476,31 @@ window.addEventListener('mousedown', function (e) {
   syncMouseToGame();
 });
 
-window.addEventListener('mouseup', function (e) {
-  if (e.button === 0) {
+function releasePointerButton(button) {
+  if (button === 0) {
     pointer.down = false;
     if (game) game.mouse.down = false;
   }
-  if (e.button === 2) {
+  if (button === 2) {
     pointer.right = false;
     if (game) game.mouse.right = false;
+  }
+}
+
+window.addEventListener('mouseup', function (e) {
+  releasePointerButton(e.button);
+});
+
+window.addEventListener('pointerup', function (e) {
+  releasePointerButton(e.button);
+});
+
+window.addEventListener('pointercancel', function () {
+  pointer.down = false;
+  pointer.right = false;
+  if (game) {
+    game.mouse.down = false;
+    game.mouse.right = false;
   }
 });
 
@@ -470,8 +527,10 @@ function syncInputModeClass() {
 
 function resetTouchControls() {
   pointer.down = false;
+  pointer.right = false;
   if (game) {
     game.mouse.down = false;
+    game.mouse.right = false;
     game.mobileMove.x = 0;
     game.mobileMove.y = 0;
     game.mobileMove.sprint = false;
@@ -640,7 +699,15 @@ window.addEventListener('keydown', function (e) {
     togglePause();
     return;
   }
-  if (!game || game.paused) return;
+  if (!game) return;
+  if (game.paused) {
+    game.keys.add(e.code);
+    if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.code) >= 0) {
+      e.preventDefault();
+    }
+    return;
+  }
+  if (game.ended || !playing) return;
   game.onKeyDown(e.code);
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.code) >= 0) {
     e.preventDefault();
