@@ -7,23 +7,16 @@
 仓库内已准备 `dist/index.html`。
 
 ```bash
-# 在 pubg-lite 目录
 node _build_single.js
-
-# 若尚未建仓库（示例）
-gh repo create battle-royale-lite --public --source=. --remote=origin
-git add .
-git commit -m "Publish Battle Royale Lite"
-git push -u origin main
-
-# 开启 Pages：Settings → Pages → Source: Deploy from branch → /dist 或根目录
-# 或使用：
-gh api -X POST repos/{owner}/battle-royale-lite/pages -f build_type=workflow
 ```
+
+仓库已有 `dist/index.html`。开启 Pages：Settings → Pages → Source: Deploy from branch → `gh-pages` 或 `/dist`。
 
 访问形式：
 
-`https://<你的用户名>.github.io/battle-royale-lite/`
+`https://hc-ui.github.io/xiaoyouxi-shishou/`
+
+英文镜像仓：[battle-royale-lite](https://github.com/hc-ui/battle-royale-lite)。
 
 若把 `dist/index.html` 作为仓库根目录内容发布，则路径更短。
 

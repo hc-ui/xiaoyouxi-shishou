@@ -7,7 +7,18 @@ function stripBom(s) {
 }
 
 const css = stripBom(fs.readFileSync(path.join(dir, 'css/style.css'), 'utf8'));
-const jsFiles = ['config.js', 'audio.js', 'world.js', 'zone.js', 'entities.js', 'game.js', 'spawn_spacing.js', 'main.js']
+const jsOrder = [
+  'config.js',
+  'audio.js',
+  'world.js',
+  'zone.js',
+  'entities.js',
+  'game.js',
+  'spawn_spacing.js',
+  'opening_grace.js',
+  'main.js',
+];
+const jsFiles = jsOrder
   .map((f) => stripBom(fs.readFileSync(path.join(dir, 'js', f), 'utf8')))
   .join('\n\n');
 
@@ -89,6 +100,14 @@ ${css}
           </ul>
         </div>
         <p class="menu-tips">纯前端单机 · 可发给好友用浏览器打开</p>
+      </div>
+    </div>
+
+    <div id="match-overlay" class="screen hidden" aria-live="polite">
+      <div class="menu-card small">
+        <p class="badge">MATCHMAKING</p>
+        <h2 id="match-overlay-text">正在匹配…</h2>
+        <p class="menu-tips" id="match-overlay-tip">准备部署</p>
       </div>
     </div>
 
@@ -187,14 +206,5 @@ fs.writeFileSync(
   `# Battle Royale Lite\n\n打开 index.html 或访问 GitHub Pages 链接即可游玩。\n`,
   'utf8'
 );
-
-for (const f of ['config.js', 'audio.js', 'world.js', 'zone.js', 'entities.js', 'game.js', 'spawn_spacing.js', 'main.js']) {
-  let t = stripBom(fs.readFileSync(path.join(dir, 'js', f), 'utf8'));
-  t = t
-    .replace(/result\?\.killed/g, 'result && result.killed')
-    .replace(/p\.mag\[w\.id\] \?\? 0/g, '(p.mag[w.id] != null ? p.mag[w.id] : 0)');
-  fs.writeFileSync(path.join(dir, 'js', f), t, { encoding: 'utf8' });
-}
-fs.writeFileSync(path.join(dir, 'css/style.css'), stripBom(css), { encoding: 'utf8' });
 
 console.log('built index.html + dist/ bytes=', Buffer.byteLength(html, 'utf8'));

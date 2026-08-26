@@ -68,6 +68,12 @@ function createBot(buildings, playerPos, others) {
         return dist({ x: x, y: y }, o) < botDist;
       })))
   );
+  if (typeof resolveCircleBuilding === 'function') {
+    const placed = { x: x, y: y, r: 14 };
+    resolveCircleBuilding(placed, buildings);
+    x = placed.x;
+    y = placed.y;
+  }
 
   const name = BOT_NAMES[nameIndex % BOT_NAMES.length];
   nameIndex++;

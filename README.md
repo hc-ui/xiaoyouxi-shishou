@@ -10,13 +10,14 @@
 
 双击 `index.html` 或 `open.bat`。
 
-开发构建：
+开发构建与测试：
 
 ```bash
+node --test tests/*.js
 node _build_single.js
 ```
 
-产物在 `index.html` 与 `dist/`。
+产物在 `index.html` 与 `dist/`。构建会把 `js/opening_grace.js` 打进单文件（休闲开局保护），不再回写源码。
 
 ## 功能
 

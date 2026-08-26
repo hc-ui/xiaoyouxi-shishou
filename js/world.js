@@ -202,6 +202,12 @@ function createLoot(buildings) {
       loot.push(makeLootItem(sniperSpots[i][0], sniperSpots[i][1], 'weapon', 'sniper'));
     }
   }
+  for (let i = 0; i < loot.length; i++) {
+    const dummy = { x: loot[i].x, y: loot[i].y, r: 12 };
+    resolveCircleBuilding(dummy, buildings);
+    loot[i].x = dummy.x;
+    loot[i].y = dummy.y;
+  }
   return loot;
 }
 
@@ -252,24 +258,82 @@ function makeLootItem(x, y, forceKind, forceWeapon, forceAmount) {
 }
 
 function resolveCircleBuilding(entity, buildings) {
-  for (const b of buildings) {
+  if (!entity || !buildings) return;
+  const r = entity.r || 14;
+  for (let pass = 0; pass < 3; pass++) {
+    let moved = false;
+    for (let i = 0; i < buildings.length; i++) {
+      const b = buildings[i];
+      const nearestX = Math.max(b.x, Math.min(entity.x, b.x + b.w));
+      const nearestY = Math.max(b.y, Math.min(entity.y, b.y + b.h));
+      const dx = entity.x - nearestX;
+      const dy = entity.y - nearestY;
+      const d = Math.hypot(dx, dy);
+      if (d < r) {
+        moved = true;
+        if (d < 1e-8) {
+          const left = entity.x - b.x;
+          const right = b.x + b.w - entity.x;
+          const top = entity.y - b.y;
+          const bottom = b.y + b.h - entity.y;
+          const m = Math.min(left, right, top, bottom);
+          if (m === left) entity.x = b.x - r - 0.5;
+          else if (m === right) entity.x = b.x + b.w + r + 0.5;
+          else if (m === top) entity.y = b.y - r - 0.5;
+          else entity.y = b.y + b.h + r + 0.5;
+        } else {
+          const push = (r - d) / d;
+          entity.x += dx * push;
+          entity.y += dy * push;
+        }
+      }
+    }
+    entity.x = Math.max(r, Math.min(WORLD.size - r, entity.x));
+    entity.y = Math.max(r, Math.min(WORLD.size - r, entity.y));
+    if (!moved) break;
+  }
+}
+
+function circleHitsBuilding(entity, buildings) {
+  if (!entity || !buildings) return false;
+  const r = entity.r || 14;
+  for (let i = 0; i < buildings.length; i++) {
+    const b = buildings[i];
     const nearestX = Math.max(b.x, Math.min(entity.x, b.x + b.w));
     const nearestY = Math.max(b.y, Math.min(entity.y, b.y + b.h));
-    const dx = entity.x - nearestX;
-    const dy = entity.y - nearestY;
-    const d = Math.hypot(dx, dy);
-    if (d < entity.r) {
-      if (d === 0) {
-        entity.x = b.x - entity.r - 1;
-      } else {
-        const push = (entity.r - d) / d;
-        entity.x += dx * push;
-        entity.y += dy * push;
+    if (Math.hypot(entity.x - nearestX, entity.y - nearestY) < r - 0.05) return true;
+  }
+  return false;
+}
+
+function resolveLivingOverlaps(entities) {
+  if (!entities) return;
+  for (let i = 0; i < entities.length; i++) {
+    const a = entities[i];
+    if (!a || !a.alive) continue;
+    for (let j = i + 1; j < entities.length; j++) {
+      const b = entities[j];
+      if (!b || !b.alive) continue;
+      let dx = a.x - b.x;
+      let dy = a.y - b.y;
+      let d = Math.hypot(dx, dy);
+      const minD = (a.r || 14) + (b.r || 14);
+      if (d < 1e-6) {
+        dx = 1;
+        dy = 0;
+        d = 1;
+      }
+      if (d < minD) {
+        const push = (minD - d) / 2;
+        const nx = dx / d;
+        const ny = dy / d;
+        a.x += nx * push;
+        a.y += ny * push;
+        b.x -= nx * push;
+        b.y -= ny * push;
       }
     }
   }
-  entity.x = Math.max(entity.r, Math.min(WORLD.size - entity.r, entity.x));
-  entity.y = Math.max(entity.r, Math.min(WORLD.size - entity.r, entity.y));
 }
 
 function lineHitsBuilding(x1, y1, x2, y2, buildings) {
